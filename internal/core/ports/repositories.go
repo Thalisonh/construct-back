@@ -18,6 +18,7 @@ type ProjectRepository interface {
 
 type LinkRepository interface {
 	CreateLink(link *domain.Link) error
-	GetAllLinks(projectID string) ([]domain.Link, error)
+	GetAllLinks(userID string) ([]domain.Link, error)
+	UpdateLink(link *domain.Link) error
 	DeleteLink(id string) error
 }

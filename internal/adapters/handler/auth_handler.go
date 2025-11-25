@@ -79,3 +79,29 @@ func (h *AuthHandler) GoogleLogin(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
+
+type verifyTokenRequest struct {
+	Token string `json:"token" binding:"required"`
+}
+
+func (h *AuthHandler) TokenVerify(c *gin.Context) {
+	var req verifyTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	tokenString := req.Token
+	if tokenString == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
+		return
+	}
+
+	err := h.authService.VerifyToken(tokenString)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "token is valid"})
+}

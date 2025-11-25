@@ -89,9 +89,9 @@ func (r *MongoDBRepository) CreateLink(link *domain.Link) error {
 	return err
 }
 
-func (r *MongoDBRepository) GetAllLinks(projectID string) ([]domain.Link, error) {
+func (r *MongoDBRepository) GetAllLinks(userID string) ([]domain.Link, error) {
 	var links []domain.Link
-	cursor, err := r.db.Collection("links").Find(context.Background(), bson.M{"project_id": projectID})
+	cursor, err := r.db.Collection("links").Find(context.Background(), bson.M{"user_id": userID})
 	if err != nil {
 		return nil, err
 	}
@@ -103,5 +103,10 @@ func (r *MongoDBRepository) GetAllLinks(projectID string) ([]domain.Link, error)
 
 func (r *MongoDBRepository) DeleteLink(id string) error {
 	_, err := r.db.Collection("links").DeleteOne(context.Background(), bson.M{"_id": id})
+	return err
+}
+
+func (r *MongoDBRepository) UpdateLink(link *domain.Link) error {
+	_, err := r.db.Collection("links").ReplaceOne(context.Background(), bson.M{"_id": link.ID}, link)
 	return err
 }

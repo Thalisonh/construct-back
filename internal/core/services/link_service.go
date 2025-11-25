@@ -3,6 +3,7 @@ package services
 import (
 	"construct-backend/internal/core/domain"
 	"construct-backend/internal/core/ports"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -17,12 +18,13 @@ func NewLinkService(linkRepo ports.LinkRepository) *LinkService {
 	}
 }
 
-func (s *LinkService) CreateLink(projectID, url, description string) (*domain.Link, error) {
+func (s *LinkService) CreateLink(userID, url, description string) (*domain.Link, error) {
 	link := &domain.Link{
 		ID:          uuid.New().String(),
 		URL:         url,
 		Description: description,
-		ProjectID:   projectID,
+		UserID:      userID,
+		CreatedAt:   time.Now(),
 	}
 
 	if err := s.linkRepo.CreateLink(link); err != nil {
@@ -32,8 +34,25 @@ func (s *LinkService) CreateLink(projectID, url, description string) (*domain.Li
 	return link, nil
 }
 
-func (s *LinkService) ListLinks(projectID string) ([]domain.Link, error) {
-	return s.linkRepo.GetAllLinks(projectID)
+func (s *LinkService) UpdateLink(userID, url, description string) (*domain.Link, error) {
+	link := &domain.Link{
+		ID:          userID,
+		URL:         url,
+		Description: description,
+		UserID:      userID,
+		UpdatedAt:   time.Now(),
+	}
+
+	err := s.linkRepo.UpdateLink(link)
+	if err != nil {
+		return nil, err
+	}
+
+	return link, nil
+}
+
+func (s *LinkService) ListLinks(userID string) ([]domain.Link, error) {
+	return s.linkRepo.GetAllLinks(userID)
 }
 
 func (s *LinkService) DeleteLink(id string) error {

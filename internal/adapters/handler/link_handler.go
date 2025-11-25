@@ -18,19 +18,24 @@ func NewLinkHandler(linkService ports.LinkService) *LinkHandler {
 }
 
 type createLinkRequest struct {
-	ProjectID   string `json:"project_id" binding:"required"`
 	URL         string `json:"url" binding:"required,url"`
 	Description string `json:"description"`
 }
 
 func (h *LinkHandler) CreateLink(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	if userID == "" || userID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+		return
+	}
+
 	var req createLinkRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	link, err := h.linkService.CreateLink(req.ProjectID, req.URL, req.Description)
+	link, err := h.linkService.CreateLink(userID.(string), req.URL, req.Description)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -40,13 +45,13 @@ func (h *LinkHandler) CreateLink(c *gin.Context) {
 }
 
 func (h *LinkHandler) ListLinks(c *gin.Context) {
-	projectID := c.Query("project_id")
-	if projectID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "project_id is required"})
+	userID, _ := c.Get("user_id")
+	if userID == "" || userID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
 		return
 	}
 
-	links, err := h.linkService.ListLinks(projectID)
+	links, err := h.linkService.ListLinks(userID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -63,4 +68,22 @@ func (h *LinkHandler) DeleteLink(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+func (h *LinkHandler) UpdateLink(c *gin.Context) {
+	id := c.Param("id")
+
+	var req createLinkRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	link, err := h.linkService.UpdateLink(id, req.URL, req.Description)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, link)
 }

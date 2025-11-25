@@ -5,6 +5,7 @@ import (
 	"construct-backend/internal/core/ports"
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -121,4 +122,17 @@ func (s *AuthService) LoginWithGoogle(idToken string) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+func (s *AuthService) VerifyToken(token string) error {
+	_, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(s.secret), nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }

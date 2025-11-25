@@ -22,6 +22,7 @@ func SetupRouter(authHandler *AuthHandler, projectHandler *ProjectHandler, linkH
 	r.POST("/login", authHandler.Login)
 	r.POST("/auth/google", authHandler.GoogleLogin)
 	r.POST("/signup/google", authHandler.GoogleLogin)
+	r.POST("/auth/verify", authHandler.TokenVerify)
 
 	api := r.Group("/")
 	api.Use(authMiddleware(jwtSecret))
@@ -34,6 +35,7 @@ func SetupRouter(authHandler *AuthHandler, projectHandler *ProjectHandler, linkH
 		api.GET("/links", linkHandler.ListLinks)
 		api.POST("/links", linkHandler.CreateLink)
 		api.DELETE("/links/:id", linkHandler.DeleteLink)
+		api.PUT("/links/:id", linkHandler.UpdateLink)
 	}
 
 	return r

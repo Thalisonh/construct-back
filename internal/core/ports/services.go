@@ -6,6 +6,7 @@ type AuthService interface {
 	Signup(email, password, name string) (string, error)
 	Login(email, password string) (string, error)
 	LoginWithGoogle(idToken string) (string, error)
+	VerifyToken(token string) error
 }
 
 type ProjectService interface {
@@ -16,7 +17,8 @@ type ProjectService interface {
 }
 
 type LinkService interface {
-	CreateLink(projectID, url, description string) (*domain.Link, error)
-	ListLinks(projectID string) ([]domain.Link, error)
+	CreateLink(userID, url, description string) (*domain.Link, error)
+	UpdateLink(id, url, description string) (*domain.Link, error)
+	ListLinks(userID string) ([]domain.Link, error)
 	DeleteLink(id string) error
 }
