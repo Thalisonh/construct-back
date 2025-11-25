@@ -10,7 +10,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func SetupRouter(authHandler *AuthHandler, projectHandler *ProjectHandler, linkHandler *LinkHandler, jwtSecret string) *gin.Engine {
+func SetupRouter(
+	authHandler *AuthHandler,
+	userHandler *UserHandler,
+	projectHandler *ProjectHandler,
+	linkHandler *LinkHandler,
+	jwtSecret string,
+) *gin.Engine {
 	r := gin.Default()
 
 	config := cors.DefaultConfig()
@@ -27,6 +33,9 @@ func SetupRouter(authHandler *AuthHandler, projectHandler *ProjectHandler, linkH
 	api := r.Group("/")
 	api.Use(authMiddleware(jwtSecret))
 	{
+		api.GET("/username", userHandler.VerifyUserName)
+		api.POST("/username", userHandler.UpdateUsername)
+
 		api.GET("/projects", projectHandler.ListProjects)
 		api.POST("/projects", projectHandler.CreateProject)
 		api.PUT("/projects/:id", projectHandler.UpdateProject)

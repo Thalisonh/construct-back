@@ -22,3 +22,8 @@ type LinkService interface {
 	ListLinks(userID string) ([]domain.Link, error)
 	DeleteLink(id string) error
 }
+
+type UserService interface {
+	VerifyUserName(username string) error
+	UpdateUsername(userID, username string) error
+}

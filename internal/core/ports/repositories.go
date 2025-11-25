@@ -6,6 +6,8 @@ type UserRepository interface {
 	CreateUser(user *domain.User) error
 	GetUserByEmail(email string) (*domain.User, error)
 	GetUserByID(id string) (*domain.User, error)
+	VerifyUserName(username string) (*domain.UsernameVerification, error)
+	UpdateUsername(userID, username string) error
 }
 
 type ProjectRepository interface {

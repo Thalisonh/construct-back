@@ -47,14 +47,16 @@ func main() {
 	authService := services.NewAuthService(mongoRepo, jwtSecret)
 	projectService := services.NewProjectService(mongoRepo)
 	linkService := services.NewLinkService(mongoRepo)
+	userService := services.NewUserService(mongoRepo)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
 	projectHandler := handler.NewProjectHandler(projectService)
 	linkHandler := handler.NewLinkHandler(linkService)
+	userHandler := handler.NewUserHandler(userService)
 
 	// Router
-	r := handler.SetupRouter(authHandler, projectHandler, linkHandler, jwtSecret)
+	r := handler.SetupRouter(authHandler, userHandler, projectHandler, linkHandler, jwtSecret)
 
 	log.Println("Server starting on :8080")
 	if err := r.Run(":8080"); err != nil {

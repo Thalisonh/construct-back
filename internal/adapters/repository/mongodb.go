@@ -110,3 +110,19 @@ func (r *MongoDBRepository) UpdateLink(link *domain.Link) error {
 	_, err := r.db.Collection("links").ReplaceOne(context.Background(), bson.M{"_id": link.ID}, link)
 	return err
 }
+
+// User Repository Implementation
+
+func (r *MongoDBRepository) VerifyUserName(username string) (*domain.UsernameVerification, error) {
+	var user domain.UsernameVerification
+	err := r.db.Collection("users").FindOne(context.Background(), bson.M{"username": username}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *MongoDBRepository) UpdateUsername(userID, username string) error {
+	_, err := r.db.Collection("users").UpdateOne(context.Background(), bson.M{"_id": userID}, bson.M{"$set": bson.M{"username": username}})
+	return err
+}
