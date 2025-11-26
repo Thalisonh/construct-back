@@ -47,7 +47,7 @@ func main() {
 	authService := services.NewAuthService(mongoRepo, jwtSecret)
 	projectService := services.NewProjectService(mongoRepo)
 	linkService := services.NewLinkService(mongoRepo)
-	userService := services.NewUserService(mongoRepo)
+	userService := services.NewUserService(mongoRepo, mongoRepo)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)

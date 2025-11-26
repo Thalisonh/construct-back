@@ -16,3 +16,12 @@ type User struct {
 type UsernameVerification struct {
 	Username string `bson:"username" json:"username"`
 }
+
+type PublicProfile struct {
+	ID       string `bson:"_id" json:"id"`
+	Username string `bson:"username" json:"username"`
+	Name     string `bson:"name" json:"name"`
+	Bio      string `bson:"bio" json:"bio"`
+	Avatar   string `bson:"avatar" json:"avatar"`
+	Links    []Link `bson:"links" json:"links"`
+}

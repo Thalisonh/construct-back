@@ -26,4 +26,6 @@ type LinkService interface {
 type UserService interface {
 	VerifyUserName(username string) error
 	UpdateUsername(userID, username string) error
+	GetUsername(userID string) (string, error)
+	GetPublicProfile(username string) (*domain.PublicProfile, error)
 }

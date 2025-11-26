@@ -55,3 +55,35 @@ func (h *UserHandler) UpdateUsername(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func (h *UserHandler) GetUsername(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	if userID == "" || userID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+		return
+	}
+
+	username, err := h.userService.GetUsername(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"username": username})
+}
+
+func (h *UserHandler) GetPublicProfile(c *gin.Context) {
+	username := c.Param("username")
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username is required"})
+		return
+	}
+
+	user, err := h.userService.GetPublicProfile(username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}

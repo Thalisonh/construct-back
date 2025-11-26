@@ -126,3 +126,21 @@ func (r *MongoDBRepository) UpdateUsername(userID, username string) error {
 	_, err := r.db.Collection("users").UpdateOne(context.Background(), bson.M{"_id": userID}, bson.M{"$set": bson.M{"username": username}})
 	return err
 }
+
+func (r *MongoDBRepository) GetUsername(userID string) (string, error) {
+	var user domain.UsernameVerification
+	err := r.db.Collection("users").FindOne(context.Background(), bson.M{"_id": userID}).Decode(&user)
+	if err != nil {
+		return "", err
+	}
+	return user.Username, nil
+}
+
+func (r *MongoDBRepository) GetPublicProfile(username string) (*domain.PublicProfile, error) {
+	var profile domain.PublicProfile
+	err := r.db.Collection("users").FindOne(context.Background(), bson.M{"username": username}).Decode(&profile)
+	if err != nil {
+		return nil, err
+	}
+	return &profile, nil
+}
