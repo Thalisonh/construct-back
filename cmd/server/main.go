@@ -9,14 +9,26 @@ import (
 	"log"
 	"os"
 
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
 
 func main() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found")
+	}
+
+	mongoURI := os.Getenv("MONGO_URI")
+	fmt.Println(mongoURI)
+	if mongoURI == "" {
+		mongoURI = "mongodb://localhost:27017"
+	}
+
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI("mongodb://localhost:27017").SetServerAPIOptions(serverAPI)
+	opts := options.Client().ApplyURI(mongoURI).SetServerAPIOptions(serverAPI)
 
 	client, err := mongo.Connect(opts)
 	if err != nil {
