@@ -9,6 +9,9 @@ import (
 	"log"
 	"os"
 
+	"construct-backend/internal/core/ports"
+
+	"cloud.google.com/go/datastore"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -21,45 +24,71 @@ func main() {
 		log.Println("No .env file found")
 	}
 
-	mongoURI := os.Getenv("MONGO_URI")
-	fmt.Println(mongoURI)
-	if mongoURI == "" {
-		mongoURI = "mongodb://localhost:27017"
-	}
-
-	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(mongoURI).SetServerAPIOptions(serverAPI)
-
-	client, err := mongo.Connect(opts)
-	if err != nil {
-		panic(err)
-	}
-	defer func() {
-		if err = client.Disconnect(context.TODO()); err != nil {
-			panic(err)
-		}
-	}()
-
-	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
-		panic(err)
-	}
-	fmt.Println("Pinged your deployment. You successfully connected to MongoDB!")
-
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		jwtSecret = "secret"
 	}
 
-	db := client.Database("construct")
+	var (
+		userRepo    ports.UserRepository
+		projectRepo ports.ProjectRepository
+		linkRepo    ports.LinkRepository
+	)
 
-	// Repositories
-	mongoRepo := repository.NewMongoDBRepository(db)
+	dbType := os.Getenv("DB_TYPE")
+	if dbType == "datastore" {
+		projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
+		if projectID == "" {
+			log.Fatal("GOOGLE_CLOUD_PROJECT environment variable is required for Datastore")
+		}
+		ctx := context.Background()
+		client, err := datastore.NewClient(ctx, projectID)
+		if err != nil {
+			log.Fatal("Failed to create Datastore client:", err)
+		}
+		defer client.Close()
+
+		dsRepo := repository.NewDatastoreRepository(client)
+		userRepo = dsRepo
+		projectRepo = dsRepo
+		linkRepo = dsRepo
+		log.Println("Connected to Google Datastore")
+	} else {
+		mongoURI := os.Getenv("MONGO_URI")
+		if mongoURI == "" {
+			mongoURI = "mongodb://localhost:27017"
+		}
+
+		serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+		opts := options.Client().ApplyURI(mongoURI).SetServerAPIOptions(serverAPI)
+
+		client, err := mongo.Connect(opts)
+		if err != nil {
+			panic(err)
+		}
+		defer func() {
+			if err = client.Disconnect(context.TODO()); err != nil {
+				panic(err)
+			}
+		}()
+
+		if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
+			panic(err)
+		}
+		fmt.Println("Pinged your deployment. You successfully connected to MongoDB!")
+
+		db := client.Database("construct")
+		mongoRepo := repository.NewMongoDBRepository(db)
+		userRepo = mongoRepo
+		projectRepo = mongoRepo
+		linkRepo = mongoRepo
+	}
 
 	// Services
-	authService := services.NewAuthService(mongoRepo, jwtSecret)
-	projectService := services.NewProjectService(mongoRepo)
-	linkService := services.NewLinkService(mongoRepo)
-	userService := services.NewUserService(mongoRepo, mongoRepo)
+	authService := services.NewAuthService(userRepo, jwtSecret)
+	projectService := services.NewProjectService(projectRepo)
+	linkService := services.NewLinkService(linkRepo)
+	userService := services.NewUserService(userRepo, linkRepo)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)

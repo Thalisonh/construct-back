@@ -5,12 +5,12 @@ import (
 )
 
 type User struct {
-	ID        string    `bson:"_id" json:"id"`
-	Email     string    `bson:"email" json:"email"`
-	Password  string    `bson:"password" json:"-"`
-	Name      string    `bson:"name" json:"name"`
-	CreatedAt time.Time `bson:"created_at" json:"created_at"`
-	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+	ID        string    `bson:"_id" json:"id" datastore:"-"`
+	Email     string    `bson:"email" json:"email" datastore:"email"`
+	Password  string    `bson:"password" json:"-" datastore:"password"`
+	Name      string    `bson:"name" json:"name" datastore:"name"`
+	CreatedAt time.Time `bson:"created_at" json:"created_at" datastore:"created_at"`
+	UpdatedAt time.Time `bson:"updated_at" json:"updated_at" datastore:"updated_at"`
 }
 
 type UsernameVerification struct {
