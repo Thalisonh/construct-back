@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/api/idtoken"
+	"gorm.io/gorm"
 )
 
 type AuthService struct {
@@ -94,7 +95,7 @@ func (s *AuthService) LoginWithGoogle(idToken string) (string, error) {
 
 	email := payload.Claims["email"].(string)
 	user, err := s.userRepo.GetUserByEmail(email)
-	if err != nil {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return "", err
 	}
 
