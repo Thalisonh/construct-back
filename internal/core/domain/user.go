@@ -5,8 +5,8 @@ import (
 )
 
 type User struct {
-	ID        string    `bson:"_id" json:"id" datastore:"-"`
-	Email     string    `bson:"email" json:"email" datastore:"email"`
+	ID        string    `bson:"_id" json:"id" datastore:"-" gorm:"primaryKey"`
+	Email     string    `bson:"email" json:"email" datastore:"email" gorm:"uniqueIndex"`
 	Password  string    `bson:"password" json:"-" datastore:"password"`
 	Name      string    `bson:"name" json:"name" datastore:"name"`
 	CreatedAt time.Time `bson:"created_at" json:"created_at" datastore:"created_at"`

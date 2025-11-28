@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -86,7 +87,7 @@ func (s *AuthService) Login(email, password string) (string, error) {
 
 func (s *AuthService) LoginWithGoogle(idToken string) (string, error) {
 	ctx := context.Background()
-	payload, err := idtoken.Validate(ctx, idToken, "")
+	payload, err := idtoken.Validate(ctx, idToken, os.Getenv("AUDIENCE"))
 	if err != nil {
 		return "", errors.New("invalid google token")
 	}

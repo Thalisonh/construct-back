@@ -3,19 +3,15 @@ package main
 import (
 	"construct-backend/internal/adapters/handler"
 	"construct-backend/internal/adapters/repository"
+	"construct-backend/internal/core/domain"
+	"construct-backend/internal/core/ports"
 	"construct-backend/internal/core/services"
-	"context"
-	"fmt"
 	"log"
 	"os"
 
-	"construct-backend/internal/core/ports"
-
-	"cloud.google.com/go/datastore"
 	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/v2/mongo"
-	"go.mongodb.org/mongo-driver/v2/mongo/options"
-	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -35,54 +31,22 @@ func main() {
 		linkRepo    ports.LinkRepository
 	)
 
-	dbType := os.Getenv("DB_TYPE")
-	if dbType == "datastore" {
-		projectID := os.Getenv("GOOGLE_CLOUD_PROJECT")
-		if projectID == "" {
-			log.Fatal("GOOGLE_CLOUD_PROJECT environment variable is required for Datastore")
-		}
-		ctx := context.Background()
-		client, err := datastore.NewClient(ctx, projectID)
-		if err != nil {
-			log.Fatal("Failed to create Datastore client:", err)
-		}
-		defer client.Close()
+	dsn := os.Getenv("POSTGRES_DSN")
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatal("Failed to connect to Postgres:", err)
 
-		dsRepo := repository.NewDatastoreRepository(client)
-		userRepo = dsRepo
-		projectRepo = dsRepo
-		linkRepo = dsRepo
-		log.Println("Connected to Google Datastore")
-	} else {
-		mongoURI := os.Getenv("MONGO_URI")
-		if mongoURI == "" {
-			mongoURI = "mongodb://localhost:27017"
-		}
-
-		serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-		opts := options.Client().ApplyURI(mongoURI).SetServerAPIOptions(serverAPI)
-
-		client, err := mongo.Connect(opts)
-		if err != nil {
-			panic(err)
-		}
-		defer func() {
-			if err = client.Disconnect(context.TODO()); err != nil {
-				panic(err)
-			}
-		}()
-
-		if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
-			panic(err)
-		}
-		fmt.Println("Pinged your deployment. You successfully connected to MongoDB!")
-
-		db := client.Database("construct")
-		mongoRepo := repository.NewMongoDBRepository(db)
-		userRepo = mongoRepo
-		projectRepo = mongoRepo
-		linkRepo = mongoRepo
+		return
 	}
+
+	// Auto Migrate
+	db.AutoMigrate(&domain.User{}, &domain.Project{}, &domain.Link{})
+
+	pgRepo := repository.NewPostgresRepository(db)
+	userRepo = pgRepo
+	projectRepo = pgRepo
+	linkRepo = pgRepo
+	log.Println("Connected to PostgreSQL")
 
 	// Services
 	authService := services.NewAuthService(userRepo, jwtSecret)
