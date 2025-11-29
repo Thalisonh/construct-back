@@ -95,7 +95,7 @@ func (s *AuthService) LoginWithGoogle(idToken string) (string, error) {
 
 	email := payload.Claims["email"].(string)
 	user, err := s.userRepo.GetUserByEmail(email)
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
+	if !errors.Is(err, gorm.ErrRecordNotFound) && err != nil {
 		return "", err
 	}
 
