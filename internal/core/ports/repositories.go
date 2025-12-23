@@ -26,3 +26,12 @@ type LinkRepository interface {
 	UpdateLink(link *domain.Link) error
 	DeleteLink(id string) error
 }
+
+type ClientRepository interface {
+	CreateClient(client *domain.Client) error
+	GetClientByID(id string) (*domain.Client, error)
+	GetAllClients() ([]domain.Client, error)
+	UpdateClient(client *domain.Client) error
+	DeleteClient(id string) error
+	AddComment(comment *domain.Comment) error
+}

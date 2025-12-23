@@ -15,6 +15,7 @@ func SetupRouter(
 	userHandler *UserHandler,
 	projectHandler *ProjectHandler,
 	linkHandler *LinkHandler,
+	clientHandler *ClientHandler,
 	jwtSecret string,
 ) *gin.Engine {
 	r := gin.Default()
@@ -51,6 +52,13 @@ func SetupRouter(
 		api.PUT("/links/:id", linkHandler.UpdateLink)
 
 		api.GET("/user/username", userHandler.GetUsername)
+
+		api.POST("/clients", clientHandler.CreateClient)
+		api.GET("/clients", clientHandler.ListClients)
+		api.GET("/clients/:id", clientHandler.GetClient)
+		api.PUT("/clients/:id", clientHandler.UpdateClient)
+		api.DELETE("/clients/:id", clientHandler.DeleteClient)
+		api.POST("/clients/:id/comments", clientHandler.AddComment)
 	}
 
 	return r

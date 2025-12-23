@@ -42,12 +42,14 @@ func main() {
 	}
 
 	// Auto Migrate
-	db.AutoMigrate(&domain.User{}, &domain.Project{}, &domain.Link{})
+	// Auto Migrate
+	db.AutoMigrate(&domain.User{}, &domain.Project{}, &domain.Link{}, &domain.Client{}, &domain.Comment{})
 
 	pgRepo := repository.NewPostgresRepository(db)
 	userRepo = pgRepo
 	projectRepo = pgRepo
 	linkRepo = pgRepo
+	clientRepo := pgRepo
 	log.Println("Connected to PostgreSQL")
 
 	// Services
@@ -55,15 +57,17 @@ func main() {
 	projectService := services.NewProjectService(projectRepo)
 	linkService := services.NewLinkService(linkRepo)
 	userService := services.NewUserService(userRepo, linkRepo)
+	clientService := services.NewClientService(clientRepo)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
 	projectHandler := handler.NewProjectHandler(projectService)
 	linkHandler := handler.NewLinkHandler(linkService)
 	userHandler := handler.NewUserHandler(userService)
+	clientHandler := handler.NewClientHandler(clientService)
 
 	// Router
-	r := handler.SetupRouter(authHandler, userHandler, projectHandler, linkHandler, jwtSecret)
+	r := handler.SetupRouter(authHandler, userHandler, projectHandler, linkHandler, clientHandler, jwtSecret)
 
 	log.Println("Server starting on :8080")
 	if err := r.Run(":8080"); err != nil {

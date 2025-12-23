@@ -123,3 +123,37 @@ func (r *PostgresRepository) UpdateLink(link *domain.Link) error {
 func (r *PostgresRepository) DeleteLink(id string) error {
 	return r.db.Delete(&domain.Link{}, "id = ?", id).Error
 }
+
+// ClientRepository Implementation
+
+func (r *PostgresRepository) CreateClient(client *domain.Client) error {
+	return r.db.Create(client).Error
+}
+
+func (r *PostgresRepository) GetClientByID(id string) (*domain.Client, error) {
+	var client domain.Client
+	if err := r.db.Preload("Comments").Where("id = ?", id).First(&client).Error; err != nil {
+		return nil, err
+	}
+	return &client, nil
+}
+
+func (r *PostgresRepository) GetAllClients() ([]domain.Client, error) {
+	var clients []domain.Client
+	if err := r.db.Preload("Comments").Find(&clients).Error; err != nil {
+		return nil, err
+	}
+	return clients, nil
+}
+
+func (r *PostgresRepository) UpdateClient(client *domain.Client) error {
+	return r.db.Save(client).Error
+}
+
+func (r *PostgresRepository) DeleteClient(id string) error {
+	return r.db.Delete(&domain.Client{}, "id = ?", id).Error
+}
+
+func (r *PostgresRepository) AddComment(comment *domain.Comment) error {
+	return r.db.Create(comment).Error
+}

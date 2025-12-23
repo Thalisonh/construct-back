@@ -29,3 +29,12 @@ type UserService interface {
 	GetUsername(userID string) (string, error)
 	GetPublicProfile(username string) (*domain.PublicProfile, error)
 }
+
+type ClientService interface {
+	CreateClient(name, phone, address, summary string) (*domain.Client, error)
+	GetClient(id string) (*domain.Client, error)
+	ListClients() ([]domain.Client, error)
+	UpdateClient(id, name, phone, address, summary string) (*domain.Client, error)
+	DeleteClient(id string) error
+	AddComment(clientID, content string) (*domain.Comment, error)
+}
