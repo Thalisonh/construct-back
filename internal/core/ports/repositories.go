@@ -18,6 +18,15 @@ type ProjectRepository interface {
 	GetProjectByID(id string) (*domain.Project, error)
 	UpdateProject(project *domain.Project) error
 	DeleteProject(id string) error
+	AddTask(task *domain.Task) error
+	AddSubtask(subtask *domain.Subtask) error
+	UpdateTask(task *domain.Task) error
+	UpdateSubtask(subtask *domain.Subtask) error
+	DeleteTask(id string) error
+	DeleteSubtask(id string) error
+	GetTaskByID(id string) (*domain.Task, error)
+	GetSubtaskByID(id string) (*domain.Subtask, error)
+	GetTasksByProjectID(projectID string) ([]domain.Task, error)
 }
 
 type LinkRepository interface {

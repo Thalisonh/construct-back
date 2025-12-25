@@ -10,10 +10,20 @@ type AuthService interface {
 }
 
 type ProjectService interface {
-	CreateProject(userID, title, description string) (*domain.Project, error)
+	CreateProject(userID, name, clientID, address, summary string, startDate string) (*domain.Project, error)
 	ListProjects(userID string) ([]domain.Project, error)
-	UpdateProject(id, title, description string) (*domain.Project, error)
+	GetProject(id string) (*domain.Project, error)
+	UpdateProject(id, name, clientID, address, summary string, startDate string) (*domain.Project, error)
 	DeleteProject(id string) error
+	AddTask(projectID, name, status string, dueDate string) (*domain.Task, error)
+	AddSubtask(taskID, name, status string) (*domain.Subtask, error)
+	UpdateTask(id, name, status string, dueDate string) (*domain.Task, error)
+	UpdateSubtask(id, name, status string) (*domain.Subtask, error)
+	DeleteTask(id string) error
+	DeleteSubtask(id string) error
+	GetTask(id string) (*domain.Task, error)
+	GetSubtask(id string) (*domain.Subtask, error)
+	ListTasks(projectID string) ([]domain.Task, error)
 }
 
 type LinkService interface {

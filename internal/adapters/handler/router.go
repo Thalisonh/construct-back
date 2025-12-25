@@ -42,9 +42,21 @@ func SetupRouter(
 		api.POST("/username", userHandler.UpdateUsername)
 
 		api.GET("/projects", projectHandler.ListProjects)
+		api.GET("/projects/:id", projectHandler.GetProject)
 		api.POST("/projects", projectHandler.CreateProject)
 		api.PUT("/projects/:id", projectHandler.UpdateProject)
 		api.DELETE("/projects/:id", projectHandler.DeleteProject)
+
+		api.POST("/projects/:id/tasks", projectHandler.AddTask)
+		api.GET("/projects/:id/tasks", projectHandler.ListTasks)
+		api.GET("/tasks/:taskId", projectHandler.GetTask)
+		api.PUT("/tasks/:taskId", projectHandler.UpdateTask)
+		api.DELETE("/tasks/:taskId", projectHandler.DeleteTask)
+
+		api.POST("/tasks/:taskId/subtasks", projectHandler.AddSubtask)
+		api.GET("/subtasks/:subtaskId", projectHandler.GetSubtask)
+		api.PUT("/subtasks/:subtaskId", projectHandler.UpdateSubtask)
+		api.DELETE("/subtasks/:subtaskId", projectHandler.DeleteSubtask)
 
 		api.GET("/links", linkHandler.ListLinks)
 		api.POST("/links", linkHandler.CreateLink)

@@ -80,7 +80,7 @@ func (r *PostgresRepository) CreateProject(project *domain.Project) error {
 
 func (r *PostgresRepository) GetAllProjects(userID string) ([]domain.Project, error) {
 	var projects []domain.Project
-	if err := r.db.Where("user_id = ?", userID).Find(&projects).Error; err != nil {
+	if err := r.db.Preload("Tasks.Subtasks").Where("user_id = ?", userID).Find(&projects).Error; err != nil {
 		return nil, err
 	}
 	return projects, nil
@@ -88,7 +88,7 @@ func (r *PostgresRepository) GetAllProjects(userID string) ([]domain.Project, er
 
 func (r *PostgresRepository) GetProjectByID(id string) (*domain.Project, error) {
 	var project domain.Project
-	if err := r.db.Where("id = ?", id).First(&project).Error; err != nil {
+	if err := r.db.Preload("Tasks.Subtasks").Where("id = ?", id).First(&project).Error; err != nil {
 		return nil, err
 	}
 	return &project, nil
@@ -100,6 +100,54 @@ func (r *PostgresRepository) UpdateProject(project *domain.Project) error {
 
 func (r *PostgresRepository) DeleteProject(id string) error {
 	return r.db.Delete(&domain.Project{}, "id = ?", id).Error
+}
+
+func (r *PostgresRepository) AddTask(task *domain.Task) error {
+	return r.db.Create(task).Error
+}
+
+func (r *PostgresRepository) AddSubtask(subtask *domain.Subtask) error {
+	return r.db.Create(subtask).Error
+}
+
+func (r *PostgresRepository) UpdateTask(task *domain.Task) error {
+	return r.db.Save(task).Error
+}
+
+func (r *PostgresRepository) UpdateSubtask(subtask *domain.Subtask) error {
+	return r.db.Save(subtask).Error
+}
+
+func (r *PostgresRepository) DeleteTask(id string) error {
+	return r.db.Delete(&domain.Task{}, "id = ?", id).Error
+}
+
+func (r *PostgresRepository) DeleteSubtask(id string) error {
+	return r.db.Delete(&domain.Subtask{}, "id = ?", id).Error
+}
+
+func (r *PostgresRepository) GetTaskByID(id string) (*domain.Task, error) {
+	var task domain.Task
+	if err := r.db.Preload("Subtasks").Where("id = ?", id).First(&task).Error; err != nil {
+		return nil, err
+	}
+	return &task, nil
+}
+
+func (r *PostgresRepository) GetSubtaskByID(id string) (*domain.Subtask, error) {
+	var subtask domain.Subtask
+	if err := r.db.Where("id = ?", id).First(&subtask).Error; err != nil {
+		return nil, err
+	}
+	return &subtask, nil
+}
+
+func (r *PostgresRepository) GetTasksByProjectID(projectID string) ([]domain.Task, error) {
+	var tasks []domain.Task
+	if err := r.db.Preload("Subtasks").Where("project_id = ?", projectID).Find(&tasks).Error; err != nil {
+		return nil, err
+	}
+	return tasks, nil
 }
 
 // LinkRepository Implementation
