@@ -3,6 +3,7 @@ package services
 import (
 	"construct-backend/internal/core/domain"
 	"construct-backend/internal/core/ports"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -109,20 +110,29 @@ func (s *ProjectService) AddSubtask(taskID, name, status string) (*domain.Subtas
 	return subtask, nil
 }
 
-func (s *ProjectService) UpdateTask(id, name, status string, dueDate string) (*domain.Task, error) {
+func (s *ProjectService) UpdateTask(id string) (*domain.Task, error) {
 	task, err := s.projectRepo.GetTaskByID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	parsedDueDate, _ := time.Parse(time.RFC3339, dueDate)
+	status := task.Status
+	if status == "Completed" {
+		status = "Pending"
+	} else {
+		status = "Completed"
+	}
 
-	task.Name = name
 	task.Status = status
-	task.DueDate = parsedDueDate
 
 	if err := s.projectRepo.UpdateTask(task); err != nil {
 		return nil, err
+	}
+
+	if status == "Completed" {
+		if err := s.projectRepo.UpdateSubtaskByTaskID(task.ID); err != nil {
+			return nil, err
+		}
 	}
 
 	return task, nil
@@ -136,14 +146,24 @@ func (s *ProjectService) DeleteSubtask(id string) error {
 	return s.projectRepo.DeleteSubtask(id)
 }
 
-func (s *ProjectService) UpdateSubtask(id, name, status string) (*domain.Subtask, error) {
+func (s *ProjectService) UpdateSubtask(id string) (*domain.Subtask, error) {
 	subtask, err := s.projectRepo.GetSubtaskByID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	subtask.Name = name
+	status := subtask.Status
+	if status == "Completed" {
+		status = "Pending"
+	} else {
+		status = "Completed"
+	}
+
 	subtask.Status = status
+
+	if err := s.projectRepo.UpdateSubtask(subtask); err != nil {
+		return nil, err
+	}
 
 	return subtask, nil
 }
@@ -157,5 +177,22 @@ func (s *ProjectService) GetSubtask(id string) (*domain.Subtask, error) {
 }
 
 func (s *ProjectService) ListTasks(projectID string) ([]domain.Task, error) {
-	return s.projectRepo.GetTasksByProjectID(projectID)
+	tasks, err := s.projectRepo.GetTasksByProjectID(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	totalTasks := len(tasks)
+	if totalTasks > 0 {
+		completedTasks := 0
+		for _, task := range tasks {
+			if task.Status == "Completed" {
+				completedTasks++
+			}
+		}
+		percentage := (float64(completedTasks) / float64(totalTasks)) * 100
+		fmt.Printf("Project %s: %.2f%% tasks completed\n", projectID, percentage)
+	}
+
+	return tasks, nil
 }

@@ -22,6 +22,7 @@ type ProjectRepository interface {
 	AddSubtask(subtask *domain.Subtask) error
 	UpdateTask(task *domain.Task) error
 	UpdateSubtask(subtask *domain.Subtask) error
+	UpdateSubtaskByTaskID(taskID string) error
 	DeleteTask(id string) error
 	DeleteSubtask(id string) error
 	GetTaskByID(id string) (*domain.Task, error)

@@ -8,6 +8,7 @@ type Project struct {
 	ID        string    `bson:"_id" json:"id" datastore:"-" gorm:"primaryKey"`
 	Name      string    `bson:"name" json:"name" datastore:"name"`
 	ClientID  string    `bson:"client_id" json:"client_id" datastore:"client_id"`
+	Client    *Client   `bson:"client,omitempty" json:"client,omitempty" datastore:"-" gorm:"foreignKey:ClientID"`
 	StartDate time.Time `bson:"start_date" json:"start_date" datastore:"start_date"`
 	Address   string    `bson:"address" json:"address" datastore:"address"`
 	Summary   string    `bson:"summary" json:"summary" datastore:"summary"`

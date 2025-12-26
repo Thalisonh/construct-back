@@ -17,8 +17,8 @@ type ProjectService interface {
 	DeleteProject(id string) error
 	AddTask(projectID, name, status string, dueDate string) (*domain.Task, error)
 	AddSubtask(taskID, name, status string) (*domain.Subtask, error)
-	UpdateTask(id, name, status string, dueDate string) (*domain.Task, error)
-	UpdateSubtask(id, name, status string) (*domain.Subtask, error)
+	UpdateTask(id string) (*domain.Task, error)
+	UpdateSubtask(id string) (*domain.Subtask, error)
 	DeleteTask(id string) error
 	DeleteSubtask(id string) error
 	GetTask(id string) (*domain.Task, error)

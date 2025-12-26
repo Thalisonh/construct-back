@@ -118,13 +118,8 @@ func (h *ProjectHandler) AddTask(c *gin.Context) {
 
 func (h *ProjectHandler) UpdateTask(c *gin.Context) {
 	id := c.Param("taskId")
-	var req createTaskRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
 
-	task, err := h.projectService.UpdateTask(id, req.Name, req.Status, req.DueDate)
+	task, err := h.projectService.UpdateTask(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -167,13 +162,8 @@ func (h *ProjectHandler) AddSubtask(c *gin.Context) {
 
 func (h *ProjectHandler) UpdateSubtask(c *gin.Context) {
 	id := c.Param("subtaskId")
-	var req createSubtaskRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
 
-	subtask, err := h.projectService.UpdateSubtask(id, req.Name, req.Status)
+	subtask, err := h.projectService.UpdateSubtask(id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

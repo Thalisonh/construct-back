@@ -80,7 +80,7 @@ func (r *PostgresRepository) CreateProject(project *domain.Project) error {
 
 func (r *PostgresRepository) GetAllProjects(userID string) ([]domain.Project, error) {
 	var projects []domain.Project
-	if err := r.db.Preload("Tasks.Subtasks").Where("user_id = ?", userID).Find(&projects).Error; err != nil {
+	if err := r.db.Preload("Tasks.Subtasks").Preload("Client").Where("user_id = ?", userID).Find(&projects).Error; err != nil {
 		return nil, err
 	}
 	return projects, nil
@@ -88,7 +88,7 @@ func (r *PostgresRepository) GetAllProjects(userID string) ([]domain.Project, er
 
 func (r *PostgresRepository) GetProjectByID(id string) (*domain.Project, error) {
 	var project domain.Project
-	if err := r.db.Preload("Tasks.Subtasks").Where("id = ?", id).First(&project).Error; err != nil {
+	if err := r.db.Preload("Tasks.Subtasks").Preload("Client").Where("id = ?", id).First(&project).Error; err != nil {
 		return nil, err
 	}
 	return &project, nil
@@ -204,4 +204,8 @@ func (r *PostgresRepository) DeleteClient(id string) error {
 
 func (r *PostgresRepository) AddComment(comment *domain.Comment) error {
 	return r.db.Create(comment).Error
+}
+
+func (r *PostgresRepository) UpdateSubtaskByTaskID(taskID string) error {
+	return r.db.Model(&domain.Subtask{}).Where("task_id = ?", taskID).Update("status", "Completed").Error
 }
