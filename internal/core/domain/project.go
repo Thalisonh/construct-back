@@ -17,6 +17,7 @@ type Project struct {
 	Tasks     []Task    `bson:"tasks" json:"tasks" datastore:"tasks" gorm:"foreignKey:ProjectID"`
 	CreatedAt time.Time `bson:"created_at" json:"created_at" datastore:"created_at"`
 	UpdatedAt time.Time `bson:"updated_at" json:"updated_at" datastore:"updated_at"`
+	IsPublic  bool      `bson:"is_public" json:"is_public" datastore:"is_public"`
 }
 
 type Task struct {

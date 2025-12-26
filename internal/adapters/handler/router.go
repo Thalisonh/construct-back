@@ -31,6 +31,7 @@ func SetupRouter(
 	r.POST("/signup/google", authHandler.GoogleLogin)
 	r.POST("/auth/verify", authHandler.TokenVerify)
 	r.GET("/public/profile/:username", userHandler.GetPublicProfile)
+	r.GET("/public/projects/:id", projectHandler.GetPublicProject)
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "OK"})
 	})

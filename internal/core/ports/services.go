@@ -13,7 +13,7 @@ type ProjectService interface {
 	CreateProject(userID, name, clientID, address, summary string, startDate string) (*domain.Project, error)
 	ListProjects(userID string) ([]domain.Project, error)
 	GetProject(id string) (*domain.Project, error)
-	UpdateProject(id, name, clientID, address, summary string, startDate string) (*domain.Project, error)
+	UpdateProject(id, name, clientID, address, summary, startDate string, isPublic bool) (*domain.Project, error)
 	DeleteProject(id string) error
 	AddTask(projectID, name, status string, dueDate string) (*domain.Task, error)
 	AddSubtask(taskID, name, status string) (*domain.Subtask, error)

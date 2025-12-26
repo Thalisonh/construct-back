@@ -24,6 +24,7 @@ type createProjectRequest struct {
 	StartDate string `json:"start_date" binding:"required"`
 	Address   string `json:"address" binding:"required"`
 	Summary   string `json:"summary" binding:"required"`
+	IsPublic  bool   `json:"is_public" binding:"required"`
 }
 
 func (h *ProjectHandler) CreateProject(c *gin.Context) {
@@ -65,6 +66,22 @@ func (h *ProjectHandler) GetProject(c *gin.Context) {
 	c.JSON(http.StatusOK, project)
 }
 
+func (h *ProjectHandler) GetPublicProject(c *gin.Context) {
+	id := c.Param("id")
+	project, err := h.projectService.GetProject(id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+		return
+	}
+
+	if !project.IsPublic {
+		c.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, project)
+}
+
 func (h *ProjectHandler) UpdateProject(c *gin.Context) {
 	id := c.Param("id")
 	var req createProjectRequest
@@ -73,7 +90,7 @@ func (h *ProjectHandler) UpdateProject(c *gin.Context) {
 		return
 	}
 
-	project, err := h.projectService.UpdateProject(id, req.Name, req.ClientID, req.Address, req.Summary, req.StartDate)
+	project, err := h.projectService.UpdateProject(id, req.Name, req.ClientID, req.Address, req.Summary, req.StartDate, req.IsPublic)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

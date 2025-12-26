@@ -49,7 +49,7 @@ func (s *ProjectService) GetProject(id string) (*domain.Project, error) {
 	return s.projectRepo.GetProjectByID(id)
 }
 
-func (s *ProjectService) UpdateProject(id, name, clientID, address, summary string, startDate string) (*domain.Project, error) {
+func (s *ProjectService) UpdateProject(id, name, clientID, address, summary, startDate string, isPublic bool) (*domain.Project, error) {
 	project, err := s.projectRepo.GetProjectByID(id)
 	if err != nil {
 		return nil, err
@@ -63,6 +63,7 @@ func (s *ProjectService) UpdateProject(id, name, clientID, address, summary stri
 	project.Summary = summary
 	project.StartDate = parsedStartDate
 	project.UpdatedAt = time.Now()
+	project.IsPublic = isPublic
 
 	if err := s.projectRepo.UpdateProject(project); err != nil {
 		return nil, err
