@@ -9,6 +9,8 @@ type User struct {
 	Email     string    `bson:"email" json:"email" datastore:"email" gorm:"uniqueIndex"`
 	Password  string    `bson:"password" json:"-" datastore:"password"`
 	Name      string    `bson:"name" json:"name" datastore:"name"`
+	Bio       string    `bson:"bio" json:"bio" datastore:"bio"`
+	Avatar    string    `bson:"avatar" json:"avatar" datastore:"avatar"`
 	CreatedAt time.Time `bson:"created_at" json:"created_at" datastore:"created_at"`
 	UpdatedAt time.Time `bson:"updated_at" json:"updated_at" datastore:"updated_at"`
 }

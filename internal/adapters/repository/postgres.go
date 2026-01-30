@@ -69,6 +69,8 @@ func (r *PostgresRepository) GetPublicProfile(username string) (*domain.PublicPr
 		Username: user.Name,
 		Name:     user.Name,
 		Links:    links,
+		Bio:      user.Bio,
+		Avatar:   user.Avatar,
 	}, nil
 }
 

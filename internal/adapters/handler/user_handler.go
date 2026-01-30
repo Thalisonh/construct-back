@@ -87,3 +87,13 @@ func (h *UserHandler) GetPublicProfile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
+func (h *UserHandler) UploadAvatar(c *gin.Context) {
+	_, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
