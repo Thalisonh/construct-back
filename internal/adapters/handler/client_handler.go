@@ -25,13 +25,19 @@ type createClientRequest struct {
 }
 
 func (h *ClientHandler) CreateClient(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	var req createClientRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	client, err := h.clientService.CreateClient(req.Name, req.Phone, req.Address, req.Summary)
+	client, err := h.clientService.CreateClient(userID, req.Name, req.Phone, req.Address, req.Summary)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -41,8 +47,14 @@ func (h *ClientHandler) CreateClient(c *gin.Context) {
 }
 
 func (h *ClientHandler) GetClient(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id := c.Param("id")
-	client, err := h.clientService.GetClient(id)
+	client, err := h.clientService.GetClient(id, userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "client not found"})
 		return
@@ -52,7 +64,13 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 }
 
 func (h *ClientHandler) ListClients(c *gin.Context) {
-	clients, err := h.clientService.ListClients()
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	clients, err := h.clientService.ListClients(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -69,6 +87,12 @@ type updateClientRequest struct {
 }
 
 func (h *ClientHandler) UpdateClient(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id := c.Param("id")
 	var req updateClientRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -76,7 +100,7 @@ func (h *ClientHandler) UpdateClient(c *gin.Context) {
 		return
 	}
 
-	client, err := h.clientService.UpdateClient(id, req.Name, req.Phone, req.Address, req.Summary)
+	client, err := h.clientService.UpdateClient(id, req.Name, req.Phone, req.Address, req.Summary, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

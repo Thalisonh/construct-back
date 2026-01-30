@@ -66,3 +66,15 @@ func (s *UserService) GetPublicProfile(username string) (*domain.PublicProfile, 
 
 	return profile, nil
 }
+
+func (s *UserService) UpdateBio(userID, bio string) error {
+	if err := s.userRepo.UpdateBio(userID, bio); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *UserService) GetProfile(userID string) (*domain.User, error) {
+	return s.userRepo.GetUserByID(userID)
+}

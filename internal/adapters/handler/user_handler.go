@@ -97,3 +97,46 @@ func (h *UserHandler) UploadAvatar(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 }
+
+func (h *UserHandler) UpdateBio(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	if userID == "" || userID == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+		return
+	}
+
+	var bio map[string]string
+	if err := c.ShouldBindJSON(&bio); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.userService.UpdateBio(userID.(string), bio["bio"]); err != nil {
+		c.JSON(http.StatusNotAcceptable, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func (h *UserHandler) GetProfile(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	if userID == "" || userID == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	user, err := h.userService.GetProfile(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":       user.ID,
+		"username": user.Name,
+		"name":     user.Name,
+		"bio":      user.Bio,
+		"avatar":   user.Avatar,
+	})
+}

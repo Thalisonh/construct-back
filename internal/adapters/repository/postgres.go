@@ -3,7 +3,9 @@ package repository
 import (
 	"construct-backend/internal/core/domain"
 	"errors"
+	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -88,20 +90,28 @@ func (r *PostgresRepository) GetAllProjects(userID string) ([]domain.Project, er
 	return projects, nil
 }
 
-func (r *PostgresRepository) GetProjectByID(id string) (*domain.Project, error) {
+func (r *PostgresRepository) GetProjectByID(id, userID string) (*domain.Project, error) {
 	var project domain.Project
-	if err := r.db.Preload("Tasks.Subtasks").Preload("Client").Where("id = ?", id).First(&project).Error; err != nil {
+	if err := r.db.Preload("Tasks.Subtasks").Preload("Client").Where("id = ? AND user_id = ?", id, userID).First(&project).Error; err != nil {
+		return nil, err
+	}
+	return &project, nil
+}
+
+func (r *PostgresRepository) GetPublicProjectByID(id string) (*domain.Project, error) {
+	var project domain.Project
+	if err := r.db.Preload("Tasks.Subtasks").Preload("Client").Where("id = ? AND is_public = true", id).First(&project).Error; err != nil {
 		return nil, err
 	}
 	return &project, nil
 }
 
 func (r *PostgresRepository) UpdateProject(project *domain.Project) error {
-	return r.db.Save(project).Error
+	return r.db.Where("user_id = ?", project.UserID).Save(project).Error
 }
 
-func (r *PostgresRepository) DeleteProject(id string) error {
-	return r.db.Delete(&domain.Project{}, "id = ?", id).Error
+func (r *PostgresRepository) DeleteProject(id, userID string) error {
+	return r.db.Delete(&domain.Project{}, "id = ? AND user_id = ?", id, userID).Error
 }
 
 func (r *PostgresRepository) AddTask(task *domain.Task) error {
@@ -113,32 +123,32 @@ func (r *PostgresRepository) AddSubtask(subtask *domain.Subtask) error {
 }
 
 func (r *PostgresRepository) UpdateTask(task *domain.Task) error {
-	return r.db.Save(task).Error
+	return r.db.Where("user_id = ?", task.UserID).Save(task).Error
 }
 
 func (r *PostgresRepository) UpdateSubtask(subtask *domain.Subtask) error {
-	return r.db.Save(subtask).Error
+	return r.db.Where("user_id = ?", subtask.UserID).Save(subtask).Error
 }
 
-func (r *PostgresRepository) DeleteTask(id string) error {
-	return r.db.Delete(&domain.Task{}, "id = ?", id).Error
+func (r *PostgresRepository) DeleteTask(id, userID string) error {
+	return r.db.Delete(&domain.Task{}, "id = ? AND user_id = ?", id, userID).Error
 }
 
-func (r *PostgresRepository) DeleteSubtask(id string) error {
-	return r.db.Delete(&domain.Subtask{}, "id = ?", id).Error
+func (r *PostgresRepository) DeleteSubtask(id, userID string) error {
+	return r.db.Delete(&domain.Subtask{}, "id = ? AND user_id = ?", id, userID).Error
 }
 
-func (r *PostgresRepository) GetTaskByID(id string) (*domain.Task, error) {
+func (r *PostgresRepository) GetTaskByID(id, userID string) (*domain.Task, error) {
 	var task domain.Task
-	if err := r.db.Preload("Subtasks").Where("id = ?", id).First(&task).Error; err != nil {
+	if err := r.db.Preload("Subtasks").Where("id = ? AND user_id = ?", id, userID).First(&task).Error; err != nil {
 		return nil, err
 	}
 	return &task, nil
 }
 
-func (r *PostgresRepository) GetSubtaskByID(id string) (*domain.Subtask, error) {
+func (r *PostgresRepository) GetSubtaskByID(id, userID string) (*domain.Subtask, error) {
 	var subtask domain.Subtask
-	if err := r.db.Where("id = ?", id).First(&subtask).Error; err != nil {
+	if err := r.db.Where("id = ? AND user_id = ?", id, userID).First(&subtask).Error; err != nil {
 		return nil, err
 	}
 	return &subtask, nil
@@ -160,18 +170,27 @@ func (r *PostgresRepository) CreateLink(link *domain.Link) error {
 
 func (r *PostgresRepository) GetAllLinks(userID string) ([]domain.Link, error) {
 	var links []domain.Link
-	if err := r.db.Where("user_id = ?", userID).Find(&links).Error; err != nil {
+	if err := r.db.Select("links.*, (SELECT COUNT(*) FROM link_clicks WHERE link_clicks.link_id = links.id) as count").Where("user_id = ?", userID).Find(&links).Error; err != nil {
 		return nil, err
 	}
 	return links, nil
 }
 
 func (r *PostgresRepository) UpdateLink(link *domain.Link) error {
-	return r.db.Save(link).Error
+	return r.db.Where("user_id = ?", link.UserID).Save(link).Error
 }
 
-func (r *PostgresRepository) DeleteLink(id string) error {
-	return r.db.Delete(&domain.Link{}, "id = ?", id).Error
+func (r *PostgresRepository) DeleteLink(id, userID string) error {
+	return r.db.Delete(&domain.Link{}, "id = ? AND user_id = ?", id, userID).Error
+}
+
+func (r *PostgresRepository) RegisterClick(linkID string) error {
+	click := &domain.LinkClick{
+		ID:        uuid.New().String(),
+		LinkID:    linkID,
+		CreatedAt: time.Now(),
+	}
+	return r.db.Create(click).Error
 }
 
 // ClientRepository Implementation
@@ -180,20 +199,18 @@ func (r *PostgresRepository) CreateClient(client *domain.Client) error {
 	return r.db.Create(client).Error
 }
 
-func (r *PostgresRepository) GetClientByID(id string) (*domain.Client, error) {
+func (r *PostgresRepository) GetClientByID(id, userID string) (*domain.Client, error) {
 	var client domain.Client
-	if err := r.db.Preload("Comments").Where("id = ?", id).First(&client).Error; err != nil {
+	if err := r.db.Preload("Comments").Where("id = ? AND user_id = ?", id, userID).First(&client).Error; err != nil {
 		return nil, err
 	}
 	return &client, nil
 }
 
-func (r *PostgresRepository) GetAllClients() ([]domain.Client, error) {
+func (r *PostgresRepository) GetAllClients(userID string) ([]domain.Client, error) {
 	var clients []domain.Client
-	if err := r.db.Preload("Comments").Find(&clients).Error; err != nil {
-		return nil, err
-	}
-	return clients, nil
+	err := r.db.Where("user_id = ?", userID).Find(&clients).Error
+	return clients, err
 }
 
 func (r *PostgresRepository) UpdateClient(client *domain.Client) error {
@@ -210,4 +227,8 @@ func (r *PostgresRepository) AddComment(comment *domain.Comment) error {
 
 func (r *PostgresRepository) UpdateSubtaskByTaskID(taskID string) error {
 	return r.db.Model(&domain.Subtask{}).Where("task_id = ?", taskID).Update("status", "Completed").Error
+}
+
+func (r *PostgresRepository) UpdateBio(userID, bio string) error {
+	return r.db.Model(&domain.User{}).Where("id = ?", userID).Update("bio", bio).Error
 }

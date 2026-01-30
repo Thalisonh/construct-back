@@ -5,14 +5,16 @@ import (
 )
 
 type Client struct {
-	ID        string    `bson:"_id" json:"id" datastore:"-" gorm:"primaryKey"`
-	Name      string    `bson:"name" json:"name" datastore:"name"`
-	Phone     string    `bson:"phone" json:"phone" datastore:"phone"`
-	Address   string    `bson:"address" json:"address" datastore:"address"`
-	Summary   string    `bson:"summary" json:"summary" datastore:"summary"`
-	Comments  []Comment `bson:"comments" json:"comments" datastore:"comments" gorm:"foreignKey:ClientID"`
-	CreatedAt time.Time `bson:"created_at" json:"created_at" datastore:"created_at"`
-	UpdatedAt time.Time `bson:"updated_at" json:"updated_at" datastore:"updated_at"`
+	ID         string    `bson:"_id" json:"id" datastore:"-" gorm:"primaryKey"`
+	UserID     string    `bson:"user_id" json:"user_id" datastore:"user_id"`
+	Name       string    `bson:"name" json:"name" datastore:"name"`
+	Phone      string    `bson:"phone" json:"phone" datastore:"phone"`
+	Address    string    `bson:"address" json:"address" datastore:"address"`
+	Summary    string    `bson:"summary" json:"summary" datastore:"summary"`
+	Comments   []Comment `bson:"comments" json:"comments" datastore:"comments" gorm:"foreignKey:ClientID"`
+	CreatedAt  time.Time `bson:"created_at" json:"created_at" datastore:"created_at"`
+	UpdatedAt  time.Time `bson:"updated_at" json:"updated_at" datastore:"updated_at"`
+	ClickCount int       `bson:"click_count" json:"click_count" datastore:"click_count"`
 }
 
 type Comment struct {

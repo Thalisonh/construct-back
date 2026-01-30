@@ -61,8 +61,14 @@ func (h *LinkHandler) ListLinks(c *gin.Context) {
 }
 
 func (h *LinkHandler) DeleteLink(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id := c.Param("id")
-	if err := h.linkService.DeleteLink(id); err != nil {
+	if err := h.linkService.DeleteLink(id, userID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -70,7 +76,23 @@ func (h *LinkHandler) DeleteLink(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (h *LinkHandler) TrackClick(c *gin.Context) {
+	id := c.Param("id")
+	if err := h.linkService.TrackLinkClick(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
 func (h *LinkHandler) UpdateLink(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id := c.Param("id")
 
 	var req createLinkRequest
@@ -79,7 +101,7 @@ func (h *LinkHandler) UpdateLink(c *gin.Context) {
 		return
 	}
 
-	link, err := h.linkService.UpdateLink(id, req.URL, req.Description)
+	link, err := h.linkService.UpdateLink(userID, req.URL, req.Description, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

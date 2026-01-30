@@ -34,9 +34,9 @@ func (s *LinkService) CreateLink(userID, url, description string) (*domain.Link,
 	return link, nil
 }
 
-func (s *LinkService) UpdateLink(userID, url, description string) (*domain.Link, error) {
+func (s *LinkService) UpdateLink(userID, url, description, id string) (*domain.Link, error) {
 	link := &domain.Link{
-		ID:          userID,
+		ID:          id,
 		URL:         url,
 		Description: description,
 		UserID:      userID,
@@ -55,6 +55,10 @@ func (s *LinkService) ListLinks(userID string) ([]domain.Link, error) {
 	return s.linkRepo.GetAllLinks(userID)
 }
 
-func (s *LinkService) DeleteLink(id string) error {
-	return s.linkRepo.DeleteLink(id)
+func (s *LinkService) DeleteLink(id, userID string) error {
+	return s.linkRepo.DeleteLink(id, userID)
+}
+
+func (s *LinkService) TrackLinkClick(id string) error {
+	return s.linkRepo.RegisterClick(id)
 }

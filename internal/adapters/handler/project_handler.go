@@ -56,8 +56,14 @@ func (h *ProjectHandler) ListProjects(c *gin.Context) {
 }
 
 func (h *ProjectHandler) GetProject(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id := c.Param("id")
-	project, err := h.projectService.GetProject(id)
+	project, err := h.projectService.GetProject(id, userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
 		return
@@ -68,13 +74,8 @@ func (h *ProjectHandler) GetProject(c *gin.Context) {
 
 func (h *ProjectHandler) GetPublicProject(c *gin.Context) {
 	id := c.Param("id")
-	project, err := h.projectService.GetProject(id)
+	project, err := h.projectService.GetPublicProject(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
-		return
-	}
-
-	if !project.IsPublic {
 		c.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
 		return
 	}
@@ -83,6 +84,12 @@ func (h *ProjectHandler) GetPublicProject(c *gin.Context) {
 }
 
 func (h *ProjectHandler) UpdateProject(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id := c.Param("id")
 	var req createProjectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -90,7 +97,7 @@ func (h *ProjectHandler) UpdateProject(c *gin.Context) {
 		return
 	}
 
-	project, err := h.projectService.UpdateProject(id, req.Name, req.ClientID, req.Address, req.Summary, req.StartDate, req.IsPublic)
+	project, err := h.projectService.UpdateProject(id, req.Name, req.ClientID, req.Address, req.Summary, req.StartDate, req.IsPublic, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -100,8 +107,14 @@ func (h *ProjectHandler) UpdateProject(c *gin.Context) {
 }
 
 func (h *ProjectHandler) DeleteProject(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id := c.Param("id")
-	if err := h.projectService.DeleteProject(id); err != nil {
+	if err := h.projectService.DeleteProject(id, userID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -116,6 +129,12 @@ type createTaskRequest struct {
 }
 
 func (h *ProjectHandler) AddTask(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	projectID := c.Param("id")
 	var req createTaskRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -124,7 +143,7 @@ func (h *ProjectHandler) AddTask(c *gin.Context) {
 		return
 	}
 
-	task, err := h.projectService.AddTask(projectID, req.Name, req.Status, req.DueDate)
+	task, err := h.projectService.AddTask(projectID, req.Name, req.Status, req.DueDate, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -134,9 +153,15 @@ func (h *ProjectHandler) AddTask(c *gin.Context) {
 }
 
 func (h *ProjectHandler) UpdateTask(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id := c.Param("taskId")
 
-	task, err := h.projectService.UpdateTask(id)
+	task, err := h.projectService.UpdateTask(id, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -146,8 +171,14 @@ func (h *ProjectHandler) UpdateTask(c *gin.Context) {
 }
 
 func (h *ProjectHandler) DeleteTask(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id := c.Param("taskId")
-	if err := h.projectService.DeleteTask(id); err != nil {
+	if err := h.projectService.DeleteTask(id, userID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -161,6 +192,12 @@ type createSubtaskRequest struct {
 }
 
 func (h *ProjectHandler) AddSubtask(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	taskID := c.Param("taskId")
 	var req createSubtaskRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -168,7 +205,7 @@ func (h *ProjectHandler) AddSubtask(c *gin.Context) {
 		return
 	}
 
-	subtask, err := h.projectService.AddSubtask(taskID, req.Name, req.Status)
+	subtask, err := h.projectService.AddSubtask(taskID, req.Name, req.Status, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -178,9 +215,15 @@ func (h *ProjectHandler) AddSubtask(c *gin.Context) {
 }
 
 func (h *ProjectHandler) UpdateSubtask(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id := c.Param("subtaskId")
 
-	subtask, err := h.projectService.UpdateSubtask(id)
+	subtask, err := h.projectService.UpdateSubtask(id, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -190,8 +233,14 @@ func (h *ProjectHandler) UpdateSubtask(c *gin.Context) {
 }
 
 func (h *ProjectHandler) DeleteSubtask(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id := c.Param("subtaskId")
-	if err := h.projectService.DeleteSubtask(id); err != nil {
+	if err := h.projectService.DeleteSubtask(id, userID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -200,8 +249,14 @@ func (h *ProjectHandler) DeleteSubtask(c *gin.Context) {
 }
 
 func (h *ProjectHandler) GetTask(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id := c.Param("taskId")
-	task, err := h.projectService.GetTask(id)
+	task, err := h.projectService.GetTask(id, userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "task not found"})
 		return
@@ -211,8 +266,14 @@ func (h *ProjectHandler) GetTask(c *gin.Context) {
 }
 
 func (h *ProjectHandler) GetSubtask(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id := c.Param("subtaskId")
-	subtask, err := h.projectService.GetSubtask(id)
+	subtask, err := h.projectService.GetSubtask(id, userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "subtask not found"})
 		return

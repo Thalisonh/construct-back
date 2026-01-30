@@ -32,6 +32,7 @@ func SetupRouter(
 	r.POST("/auth/verify", authHandler.TokenVerify)
 	r.GET("/public/profile/:username", userHandler.GetPublicProfile)
 	r.GET("/public/projects/:id", projectHandler.GetPublicProject)
+	r.POST("/click/link/:id", linkHandler.TrackClick)
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "OK"})
 	})
@@ -42,6 +43,8 @@ func SetupRouter(
 		api.GET("/username", userHandler.VerifyUserName)
 		api.POST("/username", userHandler.UpdateUsername)
 		api.POST("/profile/avatar", userHandler.UploadAvatar)
+		api.POST("/profile/bio", userHandler.UpdateBio)
+		api.GET("/profile", userHandler.GetProfile)
 
 		api.GET("/projects", projectHandler.ListProjects)
 		api.GET("/projects/:id", projectHandler.GetProject)
