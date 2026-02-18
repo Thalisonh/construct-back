@@ -18,12 +18,13 @@ func NewLinkService(linkRepo ports.LinkRepository) *LinkService {
 	}
 }
 
-func (s *LinkService) CreateLink(userID, url, description string) (*domain.Link, error) {
+func (s *LinkService) CreateLink(companyID, userID, url, description string) (*domain.Link, error) {
 	link := &domain.Link{
 		ID:          uuid.New().String(),
 		URL:         url,
 		Description: description,
 		UserID:      userID,
+		CompanyID:   companyID,
 		CreatedAt:   time.Now(),
 	}
 
@@ -34,12 +35,12 @@ func (s *LinkService) CreateLink(userID, url, description string) (*domain.Link,
 	return link, nil
 }
 
-func (s *LinkService) UpdateLink(userID, url, description, id string) (*domain.Link, error) {
+func (s *LinkService) UpdateLink(companyID, url, description, id string) (*domain.Link, error) {
 	link := &domain.Link{
 		ID:          id,
 		URL:         url,
 		Description: description,
-		UserID:      userID,
+		CompanyID:   companyID,
 		UpdatedAt:   time.Now(),
 	}
 
@@ -51,12 +52,12 @@ func (s *LinkService) UpdateLink(userID, url, description, id string) (*domain.L
 	return link, nil
 }
 
-func (s *LinkService) ListLinks(userID string) ([]domain.Link, error) {
-	return s.linkRepo.GetAllLinks(userID)
+func (s *LinkService) ListLinks(companyID string) ([]domain.Link, error) {
+	return s.linkRepo.GetAllLinks(companyID)
 }
 
-func (s *LinkService) DeleteLink(id, userID string) error {
-	return s.linkRepo.DeleteLink(id, userID)
+func (s *LinkService) DeleteLink(id, companyID string) error {
+	return s.linkRepo.DeleteLink(id, companyID)
 }
 
 func (s *LinkService) TrackLinkClick(id string) error {

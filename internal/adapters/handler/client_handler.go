@@ -26,7 +26,8 @@ type createClientRequest struct {
 
 func (h *ClientHandler) CreateClient(c *gin.Context) {
 	userID := c.GetString("user_id")
-	if userID == "" {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
@@ -37,7 +38,7 @@ func (h *ClientHandler) CreateClient(c *gin.Context) {
 		return
 	}
 
-	client, err := h.clientService.CreateClient(userID, req.Name, req.Phone, req.Address, req.Summary)
+	client, err := h.clientService.CreateClient(companyID, userID, req.Name, req.Phone, req.Address, req.Summary)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -47,14 +48,14 @@ func (h *ClientHandler) CreateClient(c *gin.Context) {
 }
 
 func (h *ClientHandler) GetClient(c *gin.Context) {
-	userID := c.GetString("user_id")
-	if userID == "" {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
 	id := c.Param("id")
-	client, err := h.clientService.GetClient(id, userID)
+	client, err := h.clientService.GetClient(id, companyID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "client not found"})
 		return
@@ -64,13 +65,13 @@ func (h *ClientHandler) GetClient(c *gin.Context) {
 }
 
 func (h *ClientHandler) ListClients(c *gin.Context) {
-	userID := c.GetString("user_id")
-	if userID == "" {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	clients, err := h.clientService.ListClients(userID)
+	clients, err := h.clientService.ListClients(companyID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -87,8 +88,8 @@ type updateClientRequest struct {
 }
 
 func (h *ClientHandler) UpdateClient(c *gin.Context) {
-	userID := c.GetString("user_id")
-	if userID == "" {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
@@ -100,7 +101,7 @@ func (h *ClientHandler) UpdateClient(c *gin.Context) {
 		return
 	}
 
-	client, err := h.clientService.UpdateClient(id, req.Name, req.Phone, req.Address, req.Summary, userID)
+	client, err := h.clientService.UpdateClient(id, req.Name, req.Phone, req.Address, req.Summary, companyID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -110,8 +111,14 @@ func (h *ClientHandler) UpdateClient(c *gin.Context) {
 }
 
 func (h *ClientHandler) DeleteClient(c *gin.Context) {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id := c.Param("id")
-	if err := h.clientService.DeleteClient(id); err != nil {
+	if err := h.clientService.DeleteClient(id, companyID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

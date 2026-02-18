@@ -18,9 +18,11 @@ func NewAuthHandler(authService ports.AuthService) *AuthHandler {
 }
 
 type signupRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
-	Name     string `json:"name" binding:"required"`
+	Email       string `json:"email" binding:"required,email"`
+	Password    string `json:"password" binding:"required,min=6"`
+	Name        string `json:"name" binding:"required"`
+	CompanyName string `json:"company_name" binding:"required"`
+	CNPJ        string `json:"cnpj" binding:"required"`
 }
 
 func (h *AuthHandler) Signup(c *gin.Context) {
@@ -30,13 +32,13 @@ func (h *AuthHandler) Signup(c *gin.Context) {
 		return
 	}
 
-	user, err := h.authService.Signup(req.Email, req.Password, req.Name)
+	user, err := h.authService.Signup(req.Email, req.Password, req.Name, req.CompanyName, req.CNPJ)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusCreated, user)
+	c.JSON(http.StatusCreated, gin.H{"token": user})
 }
 
 type loginRequest struct {

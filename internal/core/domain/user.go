@@ -5,25 +5,30 @@ import (
 )
 
 type User struct {
-	ID        string    `bson:"_id" json:"id" datastore:"-" gorm:"primaryKey"`
-	Email     string    `bson:"email" json:"email" datastore:"email" gorm:"uniqueIndex"`
-	Password  string    `bson:"password" json:"-" datastore:"password"`
-	Name      string    `bson:"name" json:"name" datastore:"name"`
-	Bio       string    `bson:"bio" json:"bio" datastore:"bio"`
-	Avatar    string    `bson:"avatar" json:"avatar" datastore:"avatar"`
-	CreatedAt time.Time `bson:"created_at" json:"created_at" datastore:"created_at"`
-	UpdatedAt time.Time `bson:"updated_at" json:"updated_at" datastore:"updated_at"`
+	ID        string    `json:"id" datastore:"-" gorm:"primaryKey"`
+	Username  string    `json:"username" datastore:"username" gorm:"uniqueIndex"`
+	Email     string    `json:"email" datastore:"email" gorm:"uniqueIndex"`
+	Password  string    `json:"-" datastore:"password"`
+	Name      string    `json:"name" datastore:"name"`
+	Phone     string    `json:"phone" datastore:"phone"`
+	CompanyID string    `json:"company_id" datastore:"company_id" gorm:"index"`
+	Role      string    `json:"role" datastore:"role"` // "admin" or "member"
+	Bio       string    `json:"bio" datastore:"bio"`
+	Avatar    string    `json:"avatar" datastore:"avatar"`
+	CreatedAt time.Time `json:"created_at" datastore:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" datastore:"updated_at"`
 }
 
 type UsernameVerification struct {
-	Username string `bson:"username" json:"username"`
+	Username string `json:"username"`
 }
 
 type PublicProfile struct {
-	ID       string `bson:"_id" json:"id"`
-	Username string `bson:"username" json:"username"`
-	Name     string `bson:"name" json:"name"`
-	Bio      string `bson:"bio" json:"bio"`
-	Avatar   string `bson:"avatar" json:"avatar"`
-	Links    []Link `bson:"links" json:"links"`
+	ID        string `json:"id"`
+	Username  string `json:"username"`
+	Name      string `json:"name"`
+	Bio       string `json:"bio"`
+	Avatar    string `json:"avatar"`
+	CompanyID string `json:"company_id"`
+	Links     []Link `json:"links"`
 }

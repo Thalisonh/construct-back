@@ -18,10 +18,11 @@ func NewClientService(clientRepo ports.ClientRepository) *ClientService {
 	}
 }
 
-func (s *ClientService) CreateClient(userID, name, phone, address, summary string) (*domain.Client, error) {
+func (s *ClientService) CreateClient(companyID, userID, name, phone, address, summary string) (*domain.Client, error) {
 	client := &domain.Client{
 		ID:        uuid.New().String(),
 		UserID:    userID,
+		CompanyID: companyID,
 		Name:      name,
 		Phone:     phone,
 		Address:   address,
@@ -37,16 +38,16 @@ func (s *ClientService) CreateClient(userID, name, phone, address, summary strin
 	return client, nil
 }
 
-func (s *ClientService) GetClient(id, userID string) (*domain.Client, error) {
-	return s.clientRepo.GetClientByID(id, userID)
+func (s *ClientService) GetClient(id, companyID string) (*domain.Client, error) {
+	return s.clientRepo.GetClientByID(id, companyID)
 }
 
-func (s *ClientService) ListClients(userID string) ([]domain.Client, error) {
-	return s.clientRepo.GetAllClients(userID)
+func (s *ClientService) ListClients(companyID string) ([]domain.Client, error) {
+	return s.clientRepo.GetAllClients(companyID)
 }
 
-func (s *ClientService) UpdateClient(id, name, phone, address, summary, userID string) (*domain.Client, error) {
-	client, err := s.clientRepo.GetClientByID(id, userID)
+func (s *ClientService) UpdateClient(id, name, phone, address, summary, companyID string) (*domain.Client, error) {
+	client, err := s.clientRepo.GetClientByID(id, companyID)
 	if err != nil {
 		return nil, err
 	}
@@ -64,8 +65,8 @@ func (s *ClientService) UpdateClient(id, name, phone, address, summary, userID s
 	return client, nil
 }
 
-func (s *ClientService) DeleteClient(id string) error {
-	return s.clientRepo.DeleteClient(id)
+func (s *ClientService) DeleteClient(id, companyID string) error {
+	return s.clientRepo.DeleteClient(id, companyID)
 }
 
 func (s *ClientService) AddComment(clientID, content string) (*domain.Comment, error) {

@@ -7,6 +7,7 @@ import (
 type Client struct {
 	ID         string    `bson:"_id" json:"id" datastore:"-" gorm:"primaryKey"`
 	UserID     string    `bson:"user_id" json:"user_id" datastore:"user_id"`
+	CompanyID  string    `bson:"company_id" json:"company_id" datastore:"company_id" gorm:"index"`
 	Name       string    `bson:"name" json:"name" datastore:"name"`
 	Phone      string    `bson:"phone" json:"phone" datastore:"phone"`
 	Address    string    `bson:"address" json:"address" datastore:"address"`

@@ -23,9 +23,10 @@ type createLinkRequest struct {
 }
 
 func (h *LinkHandler) CreateLink(c *gin.Context) {
-	userID, _ := c.Get("user_id")
-	if userID == "" || userID == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+	userID := c.GetString("user_id")
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
@@ -35,7 +36,7 @@ func (h *LinkHandler) CreateLink(c *gin.Context) {
 		return
 	}
 
-	link, err := h.linkService.CreateLink(userID.(string), req.URL, req.Description)
+	link, err := h.linkService.CreateLink(companyID, userID, req.URL, req.Description)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -45,13 +46,13 @@ func (h *LinkHandler) CreateLink(c *gin.Context) {
 }
 
 func (h *LinkHandler) ListLinks(c *gin.Context) {
-	userID, _ := c.Get("user_id")
-	if userID == "" || userID == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	links, err := h.linkService.ListLinks(userID.(string))
+	links, err := h.linkService.ListLinks(companyID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -61,14 +62,14 @@ func (h *LinkHandler) ListLinks(c *gin.Context) {
 }
 
 func (h *LinkHandler) DeleteLink(c *gin.Context) {
-	userID := c.GetString("user_id")
-	if userID == "" {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
 	id := c.Param("id")
-	if err := h.linkService.DeleteLink(id, userID); err != nil {
+	if err := h.linkService.DeleteLink(id, companyID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -87,8 +88,8 @@ func (h *LinkHandler) TrackClick(c *gin.Context) {
 }
 
 func (h *LinkHandler) UpdateLink(c *gin.Context) {
-	userID := c.GetString("user_id")
-	if userID == "" {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
@@ -101,7 +102,7 @@ func (h *LinkHandler) UpdateLink(c *gin.Context) {
 		return
 	}
 
-	link, err := h.linkService.UpdateLink(userID, req.URL, req.Description, id)
+	link, err := h.linkService.UpdateLink(companyID, req.URL, req.Description, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -16,6 +16,7 @@ func SetupRouter(
 	projectHandler *ProjectHandler,
 	linkHandler *LinkHandler,
 	clientHandler *ClientHandler,
+	companyHandler *CompanyHandler,
 	jwtSecret string,
 ) *gin.Engine {
 	r := gin.Default()
@@ -45,6 +46,8 @@ func SetupRouter(
 		api.POST("/profile/avatar", userHandler.UploadAvatar)
 		api.POST("/profile/bio", userHandler.UpdateBio)
 		api.GET("/profile", userHandler.GetProfile)
+		api.PUT("/profile", userHandler.UpdateProfile)
+		api.PUT("/profile/password", userHandler.UpdatePassword)
 
 		api.GET("/projects", projectHandler.ListProjects)
 		api.GET("/projects/:id", projectHandler.GetProject)
@@ -76,6 +79,11 @@ func SetupRouter(
 		api.PUT("/clients/:id", clientHandler.UpdateClient)
 		api.DELETE("/clients/:id", clientHandler.DeleteClient)
 		api.POST("/clients/:id/comments", clientHandler.AddComment)
+
+		api.GET("/company", companyHandler.GetCompany)
+		api.PUT("/company", companyHandler.UpdateCompany)
+		api.GET("/company/members", companyHandler.ListMembers)
+		api.POST("/company/members", companyHandler.AddMember)
 	}
 
 	return r
@@ -104,6 +112,8 @@ func authMiddleware(secret string) gin.HandlerFunc {
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			c.Set("user_id", claims["user_id"])
+			c.Set("company_id", claims["company_id"])
+			c.Set("role", claims["role"])
 		} else {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 			return

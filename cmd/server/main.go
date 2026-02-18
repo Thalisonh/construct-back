@@ -29,6 +29,7 @@ func main() {
 		userRepo    ports.UserRepository
 		projectRepo ports.ProjectRepository
 		linkRepo    ports.LinkRepository
+		companyRepo ports.CompanyRepository
 	)
 
 	dsn := os.Getenv("POSTGRES_DSN")
@@ -43,21 +44,23 @@ func main() {
 
 	// Auto Migrate
 	// Auto Migrate
-	db.AutoMigrate(&domain.User{}, &domain.Project{}, &domain.Link{}, &domain.Client{}, &domain.Comment{}, &domain.Task{}, &domain.Subtask{}, &domain.LinkClick{})
+	db.AutoMigrate(&domain.User{}, &domain.Project{}, &domain.Link{}, &domain.Client{}, &domain.Comment{}, &domain.Task{}, &domain.Subtask{}, &domain.LinkClick{}, &domain.Company{})
 
 	pgRepo := repository.NewPostgresRepository(db)
 	userRepo = pgRepo
 	projectRepo = pgRepo
 	linkRepo = pgRepo
+	companyRepo = pgRepo
 	clientRepo := pgRepo
 	log.Println("Connected to PostgreSQL")
 
 	// Services
-	authService := services.NewAuthService(userRepo, jwtSecret)
+	authService := services.NewAuthService(userRepo, companyRepo, jwtSecret)
 	projectService := services.NewProjectService(projectRepo)
 	linkService := services.NewLinkService(linkRepo)
 	userService := services.NewUserService(userRepo, linkRepo)
 	clientService := services.NewClientService(clientRepo)
+	companyService := services.NewCompanyService(companyRepo)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
@@ -65,9 +68,10 @@ func main() {
 	linkHandler := handler.NewLinkHandler(linkService)
 	userHandler := handler.NewUserHandler(userService)
 	clientHandler := handler.NewClientHandler(clientService)
+	companyHandler := handler.NewCompanyHandler(companyService, userService)
 
 	// Router
-	r := handler.SetupRouter(authHandler, userHandler, projectHandler, linkHandler, clientHandler, jwtSecret)
+	r := handler.SetupRouter(authHandler, userHandler, projectHandler, linkHandler, clientHandler, companyHandler, jwtSecret)
 
 	log.Println("Server starting on :8080")
 	if err := r.Run(":8080"); err != nil {

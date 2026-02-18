@@ -14,6 +14,7 @@ type Project struct {
 	Summary   string    `bson:"summary" json:"summary" datastore:"summary"`
 	Status    string    `bson:"status" json:"status" datastore:"status"`
 	UserID    string    `bson:"user_id" json:"user_id" datastore:"user_id" gorm:"index"`
+	CompanyID string    `bson:"company_id" json:"company_id" datastore:"company_id" gorm:"index"`
 	Tasks     []Task    `bson:"tasks" json:"tasks" datastore:"tasks" gorm:"foreignKey:ProjectID"`
 	CreatedAt time.Time `bson:"created_at" json:"created_at" datastore:"created_at"`
 	UpdatedAt time.Time `bson:"updated_at" json:"updated_at" datastore:"updated_at"`
@@ -27,6 +28,7 @@ type Task struct {
 	DueDate   time.Time `bson:"due_date" json:"due_date" datastore:"due_date"`
 	Status    string    `bson:"status" json:"status" datastore:"status"`
 	UserID    string    `bson:"user_id" json:"user_id" datastore:"user_id" gorm:"index"`
+	CompanyID string    `bson:"company_id" json:"company_id" datastore:"company_id" gorm:"index"`
 	Subtasks  []Subtask `bson:"subtasks" json:"subtasks" datastore:"subtasks" gorm:"foreignKey:TaskID"`
 	CreatedAt time.Time `bson:"created_at" json:"created_at" datastore:"created_at"`
 }
@@ -37,5 +39,6 @@ type Subtask struct {
 	Name      string    `bson:"name" json:"name" datastore:"name"`
 	Status    string    `bson:"status" json:"status" datastore:"status"`
 	UserID    string    `bson:"user_id" json:"user_id" datastore:"user_id" gorm:"index"`
+	CompanyID string    `bson:"company_id" json:"company_id" datastore:"company_id" gorm:"index"`
 	CreatedAt time.Time `bson:"created_at" json:"created_at" datastore:"created_at"`
 }

@@ -19,7 +19,7 @@ func NewProjectService(projectRepo ports.ProjectRepository) *ProjectService {
 	}
 }
 
-func (s *ProjectService) CreateProject(userID, name, clientID, address, summary string, startDate string) (*domain.Project, error) {
+func (s *ProjectService) CreateProject(companyID, userID, name, clientID, address, summary string, startDate string) (*domain.Project, error) {
 	parsedStartDate, _ := time.Parse(time.RFC3339, startDate)
 
 	project := &domain.Project{
@@ -30,6 +30,7 @@ func (s *ProjectService) CreateProject(userID, name, clientID, address, summary 
 		Summary:   summary,
 		StartDate: parsedStartDate,
 		UserID:    userID,
+		CompanyID: companyID,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -41,20 +42,20 @@ func (s *ProjectService) CreateProject(userID, name, clientID, address, summary 
 	return project, nil
 }
 
-func (s *ProjectService) ListProjects(userID string) ([]domain.Project, error) {
-	return s.projectRepo.GetAllProjects(userID)
+func (s *ProjectService) ListProjects(companyID string) ([]domain.Project, error) {
+	return s.projectRepo.GetAllProjects(companyID)
 }
 
-func (s *ProjectService) GetProject(id, userID string) (*domain.Project, error) {
-	return s.projectRepo.GetProjectByID(id, userID)
+func (s *ProjectService) GetProject(id, companyID string) (*domain.Project, error) {
+	return s.projectRepo.GetProjectByID(id, companyID)
 }
 
 func (s *ProjectService) GetPublicProject(id string) (*domain.Project, error) {
 	return s.projectRepo.GetPublicProjectByID(id)
 }
 
-func (s *ProjectService) UpdateProject(id, name, clientID, address, summary, startDate string, isPublic bool, userID string) (*domain.Project, error) {
-	project, err := s.projectRepo.GetProjectByID(id, userID)
+func (s *ProjectService) UpdateProject(id, name, clientID, address, summary, startDate string, isPublic bool, companyID string) (*domain.Project, error) {
+	project, err := s.projectRepo.GetProjectByID(id, companyID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,11 +77,11 @@ func (s *ProjectService) UpdateProject(id, name, clientID, address, summary, sta
 	return project, nil
 }
 
-func (s *ProjectService) DeleteProject(id, userID string) error {
-	return s.projectRepo.DeleteProject(id, userID)
+func (s *ProjectService) DeleteProject(id, companyID string) error {
+	return s.projectRepo.DeleteProject(id, companyID)
 }
 
-func (s *ProjectService) AddTask(projectID, name, status, dueDate, userID string) (*domain.Task, error) {
+func (s *ProjectService) AddTask(projectID, name, status, dueDate, companyID, userID string) (*domain.Task, error) {
 	parsedDueDate, _ := time.Parse(time.RFC3339, dueDate)
 
 	task := &domain.Task{
@@ -90,16 +91,12 @@ func (s *ProjectService) AddTask(projectID, name, status, dueDate, userID string
 		Status:    status,
 		DueDate:   parsedDueDate,
 		UserID:    userID,
+		CompanyID: companyID,
 		CreatedAt: time.Now(),
 	}
 
-	// Verify project ownership before adding task?
-	// GetProjectByID check is safest, but AddTask relies on projectID.
-	// Ideally we should check if projectID belongs to userID.
-	// But repository.AddTask just inserts.
-	// Let's rely on the handler passing a valid projectID for the user?
-	// No, user can pass any projectID. We must verify ownership.
-	_, err := s.projectRepo.GetProjectByID(projectID, userID)
+	// Verify project ownership before adding task
+	_, err := s.projectRepo.GetProjectByID(projectID, companyID)
 	if err != nil {
 		return nil, fmt.Errorf("project not found or access denied")
 	}
@@ -111,9 +108,9 @@ func (s *ProjectService) AddTask(projectID, name, status, dueDate, userID string
 	return task, nil
 }
 
-func (s *ProjectService) AddSubtask(taskID, name, status, userID string) (*domain.Subtask, error) {
+func (s *ProjectService) AddSubtask(taskID, name, status, companyID, userID string) (*domain.Subtask, error) {
 	// Verify task ownership
-	_, err := s.projectRepo.GetTaskByID(taskID, userID)
+	_, err := s.projectRepo.GetTaskByID(taskID, companyID)
 	if err != nil {
 		return nil, fmt.Errorf("task not found or access denied")
 	}
@@ -124,6 +121,7 @@ func (s *ProjectService) AddSubtask(taskID, name, status, userID string) (*domai
 		Name:      name,
 		Status:    status,
 		UserID:    userID,
+		CompanyID: companyID,
 		CreatedAt: time.Now(),
 	}
 
@@ -134,8 +132,8 @@ func (s *ProjectService) AddSubtask(taskID, name, status, userID string) (*domai
 	return subtask, nil
 }
 
-func (s *ProjectService) UpdateTask(id, userID string) (*domain.Task, error) {
-	task, err := s.projectRepo.GetTaskByID(id, userID)
+func (s *ProjectService) UpdateTask(id, companyID string) (*domain.Task, error) {
+	task, err := s.projectRepo.GetTaskByID(id, companyID)
 	if err != nil {
 		return nil, err
 	}
@@ -162,16 +160,16 @@ func (s *ProjectService) UpdateTask(id, userID string) (*domain.Task, error) {
 	return task, nil
 }
 
-func (s *ProjectService) DeleteTask(id, userID string) error {
-	return s.projectRepo.DeleteTask(id, userID)
+func (s *ProjectService) DeleteTask(id, companyID string) error {
+	return s.projectRepo.DeleteTask(id, companyID)
 }
 
-func (s *ProjectService) DeleteSubtask(id, userID string) error {
-	return s.projectRepo.DeleteSubtask(id, userID)
+func (s *ProjectService) DeleteSubtask(id, companyID string) error {
+	return s.projectRepo.DeleteSubtask(id, companyID)
 }
 
-func (s *ProjectService) UpdateSubtask(id, userID string) (*domain.Subtask, error) {
-	subtask, err := s.projectRepo.GetSubtaskByID(id, userID)
+func (s *ProjectService) UpdateSubtask(id, companyID string) (*domain.Subtask, error) {
+	subtask, err := s.projectRepo.GetSubtaskByID(id, companyID)
 	if err != nil {
 		return nil, err
 	}
@@ -192,12 +190,12 @@ func (s *ProjectService) UpdateSubtask(id, userID string) (*domain.Subtask, erro
 	return subtask, nil
 }
 
-func (s *ProjectService) GetTask(id, userID string) (*domain.Task, error) {
-	return s.projectRepo.GetTaskByID(id, userID)
+func (s *ProjectService) GetTask(id, companyID string) (*domain.Task, error) {
+	return s.projectRepo.GetTaskByID(id, companyID)
 }
 
-func (s *ProjectService) GetSubtask(id, userID string) (*domain.Subtask, error) {
-	return s.projectRepo.GetSubtaskByID(id, userID)
+func (s *ProjectService) GetSubtask(id, companyID string) (*domain.Subtask, error) {
+	return s.projectRepo.GetSubtaskByID(id, companyID)
 }
 
 func (s *ProjectService) ListTasks(projectID string) ([]domain.Task, error) {

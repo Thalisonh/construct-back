@@ -9,6 +9,7 @@ type Link struct {
 	URL         string    `bson:"url" json:"url" datastore:"url"`
 	Description string    `bson:"description" json:"description" datastore:"description"`
 	UserID      string    `bson:"user_id" json:"user_id" datastore:"user_id" gorm:"index"`
+	CompanyID   string    `bson:"company_id" json:"company_id" datastore:"company_id" gorm:"index"`
 	CreatedAt   time.Time `bson:"created_at" json:"created_at" datastore:"created_at"`
 	UpdatedAt   time.Time `bson:"updated_at" json:"updated_at" datastore:"updated_at"`
 	Count       int       `bson:"count" json:"count" datastore:"count"`

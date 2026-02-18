@@ -17,18 +17,20 @@ import (
 )
 
 type AuthService struct {
-	userRepo ports.UserRepository
-	secret   string
+	userRepo    ports.UserRepository
+	companyRepo ports.CompanyRepository
+	secret      string
 }
 
-func NewAuthService(userRepo ports.UserRepository, secret string) *AuthService {
+func NewAuthService(userRepo ports.UserRepository, companyRepo ports.CompanyRepository, secret string) *AuthService {
 	return &AuthService{
-		userRepo: userRepo,
-		secret:   secret,
+		userRepo:    userRepo,
+		companyRepo: companyRepo,
+		secret:      secret,
 	}
 }
 
-func (s *AuthService) Signup(email, password, name string) (string, error) {
+func (s *AuthService) Signup(email, password, name, companyName, cnpj string) (string, error) {
 	existingUser, _ := s.userRepo.GetUserByEmail(email)
 	if existingUser != nil {
 		return "", errors.New("user already exists")
@@ -39,11 +41,30 @@ func (s *AuthService) Signup(email, password, name string) (string, error) {
 		return "", err
 	}
 
+	// Create Company first
+	company := &domain.Company{
+		ID:        uuid.New().String(),
+		Name:      companyName,
+		CNPJ:      cnpj,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Email:     email,
+	}
+
+	if err := s.companyRepo.CreateCompany(company); err != nil {
+		return "", err
+	}
+
 	user := &domain.User{
-		ID:       uuid.New().String(),
-		Email:    email,
-		Password: string(hashedPassword),
-		Name:     name,
+		ID:        uuid.New().String(),
+		Username:  Slugify(name),
+		Email:     email,
+		Password:  string(hashedPassword),
+		Name:      name,
+		CompanyID: company.ID,
+		Role:      "admin",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 
 	if err := s.userRepo.CreateUser(user); err != nil {
@@ -51,8 +72,10 @@ func (s *AuthService) Signup(email, password, name string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+		"user_id":    user.ID,
+		"company_id": user.CompanyID,
+		"role":       user.Role,
+		"exp":        time.Now().Add(time.Hour * 24).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(s.secret))
@@ -74,8 +97,10 @@ func (s *AuthService) Login(email, password string) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+		"user_id":    user.ID,
+		"company_id": user.CompanyID,
+		"role":       user.Role,
+		"exp":        time.Now().Add(time.Hour * 24).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(s.secret))
@@ -114,8 +139,10 @@ func (s *AuthService) LoginWithGoogle(idToken string) (string, error) {
 
 	// Generate JWT
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+		"user_id":    user.ID,
+		"company_id": user.CompanyID,
+		"role":       user.Role,
+		"exp":        time.Now().Add(time.Hour * 24).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(s.secret))

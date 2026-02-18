@@ -58,11 +58,6 @@ func (h *UserHandler) UpdateUsername(c *gin.Context) {
 
 func (h *UserHandler) GetUsername(c *gin.Context) {
 	userID, _ := c.Get("user_id")
-	if userID == "" || userID == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
-		return
-	}
-
 	username, err := h.userService.GetUsername(userID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -133,10 +128,71 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":       user.ID,
-		"username": user.Name,
-		"name":     user.Name,
-		"bio":      user.Bio,
-		"avatar":   user.Avatar,
+		"id":         user.ID,
+		"username":   user.Username,
+		"name":       user.Name,
+		"bio":        user.Bio,
+		"avatar":     user.Avatar,
+		"email":      user.Email,
+		"phone":      user.Phone,
+		"company_id": user.CompanyID,
 	})
+}
+
+type updateProfileRequest struct {
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Phone     string `json:"phone"`
+	CompanyID string `json:"company_id"`
+}
+
+func (h *UserHandler) UpdateProfile(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	if userID == "" || userID == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var req updateProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.userService.UpdateProfile(userID.(string), req.Name, req.Email, req.Phone, req.CompanyID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+type updatePasswordRequest struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
+}
+
+func (h *UserHandler) UpdatePassword(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	if userID == "" || userID == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var req updatePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.userService.UpdatePassword(userID.(string), req.OldPassword, req.NewPassword); err != nil {
+		if err.Error() == "invalid old password" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
