@@ -12,13 +12,14 @@ type AuthService interface {
 type ProjectService interface {
 	CreateProject(companyID, userID, name, clientID, address, summary string, startDate string) (*domain.Project, error)
 	ListProjects(companyID string) ([]domain.Project, error)
+	ListProjectsByClient(clientID, companyID string) ([]domain.Project, error)
 	GetProject(id, companyID string) (*domain.Project, error)
 	GetPublicProject(id string) (*domain.Project, error)
 	UpdateProject(id, name, clientID, address, summary, startDate string, isPublic bool, companyID string) (*domain.Project, error)
 	DeleteProject(id, companyID string) error
 	AddTask(projectID, name, status, dueDate, companyID, userID string) (*domain.Task, error)
 	AddSubtask(taskID, name, status, companyID, userID string) (*domain.Subtask, error)
-	UpdateTask(id, companyID string) (*domain.Task, error)
+	UpdateTask(id, companyID, status string) (*domain.Task, error)
 	UpdateSubtask(id, companyID string) (*domain.Subtask, error)
 	DeleteTask(id, companyID string) error
 	DeleteSubtask(id, companyID string) error

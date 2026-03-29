@@ -114,6 +114,14 @@ func (r *PostgresRepository) GetAllProjects(companyID string) ([]domain.Project,
 	return projects, nil
 }
 
+func (r *PostgresRepository) GetProjectsByClientID(clientID, companyID string) ([]domain.Project, error) {
+	var projects []domain.Project
+	if err := r.db.Preload("Tasks.Subtasks").Preload("Client").Where("client_id = ? AND company_id = ?", clientID, companyID).Find(&projects).Error; err != nil {
+		return nil, err
+	}
+	return projects, nil
+}
+
 func (r *PostgresRepository) GetProjectByID(id, companyID string) (*domain.Project, error) {
 	var project domain.Project
 	if err := r.db.Preload("Tasks.Subtasks").Preload("Client").Where("id = ? AND company_id = ?", id, companyID).First(&project).Error; err != nil {
@@ -131,7 +139,7 @@ func (r *PostgresRepository) GetPublicProjectByID(id string) (*domain.Project, e
 }
 
 func (r *PostgresRepository) UpdateProject(project *domain.Project) error {
-	return r.db.Where("user_id = ?", project.UserID).Save(project).Error
+	return r.db.Where("id = ? AND company_id = ?", project.ID, project.CompanyID).Save(project).Error
 }
 
 func (r *PostgresRepository) DeleteProject(id, companyID string) error {

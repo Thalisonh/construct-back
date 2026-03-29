@@ -19,6 +19,7 @@ type UserRepository interface {
 type ProjectRepository interface {
 	CreateProject(project *domain.Project) error
 	GetAllProjects(companyID string) ([]domain.Project, error)
+	GetProjectsByClientID(clientID, companyID string) ([]domain.Project, error)
 	GetProjectByID(id, companyID string) (*domain.Project, error)
 	GetPublicProjectByID(id string) (*domain.Project, error)
 	UpdateProject(project *domain.Project) error

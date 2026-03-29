@@ -20,7 +20,10 @@ func NewProjectService(projectRepo ports.ProjectRepository) *ProjectService {
 }
 
 func (s *ProjectService) CreateProject(companyID, userID, name, clientID, address, summary string, startDate string) (*domain.Project, error) {
-	parsedStartDate, _ := time.Parse(time.RFC3339, startDate)
+	parsedStartDate, errParse := time.Parse(time.RFC3339, startDate)
+	if errParse != nil {
+		parsedStartDate, _ = time.Parse("2006-01-02", startDate)
+	}
 
 	project := &domain.Project{
 		ID:        uuid.New().String(),
@@ -46,6 +49,10 @@ func (s *ProjectService) ListProjects(companyID string) ([]domain.Project, error
 	return s.projectRepo.GetAllProjects(companyID)
 }
 
+func (s *ProjectService) ListProjectsByClient(clientID, companyID string) ([]domain.Project, error) {
+	return s.projectRepo.GetProjectsByClientID(clientID, companyID)
+}
+
 func (s *ProjectService) GetProject(id, companyID string) (*domain.Project, error) {
 	return s.projectRepo.GetProjectByID(id, companyID)
 }
@@ -60,7 +67,10 @@ func (s *ProjectService) UpdateProject(id, name, clientID, address, summary, sta
 		return nil, err
 	}
 
-	parsedStartDate, _ := time.Parse(time.RFC3339, startDate)
+	parsedStartDate, err := time.Parse(time.RFC3339, startDate)
+	if err != nil {
+		parsedStartDate, _ = time.Parse("2006-01-02", startDate)
+	}
 
 	project.Name = name
 	project.ClientID = clientID
@@ -82,7 +92,10 @@ func (s *ProjectService) DeleteProject(id, companyID string) error {
 }
 
 func (s *ProjectService) AddTask(projectID, name, status, dueDate, companyID, userID string) (*domain.Task, error) {
-	parsedDueDate, _ := time.Parse(time.RFC3339, dueDate)
+	parsedDueDate, errParse := time.Parse(time.RFC3339, dueDate)
+	if errParse != nil {
+		parsedDueDate, _ = time.Parse("2006-01-02", dueDate)
+	}
 
 	task := &domain.Task{
 		ID:        uuid.New().String(),
@@ -132,20 +145,22 @@ func (s *ProjectService) AddSubtask(taskID, name, status, companyID, userID stri
 	return subtask, nil
 }
 
-func (s *ProjectService) UpdateTask(id, companyID string) (*domain.Task, error) {
+func (s *ProjectService) UpdateTask(id, companyID, status string) (*domain.Task, error) {
 	task, err := s.projectRepo.GetTaskByID(id, companyID)
 	if err != nil {
 		return nil, err
 	}
 
-	status := task.Status
-	if status == "Completed" {
-		status = "Pending"
+	if status != "" {
+		task.Status = status
 	} else {
-		status = "Completed"
+		// Fallback to toggle if no status provided (for backward compatibility if needed)
+		if task.Status == "Completed" {
+			task.Status = "Pending"
+		} else {
+			task.Status = "Completed"
+		}
 	}
-
-	task.Status = status
 
 	if err := s.projectRepo.UpdateTask(task); err != nil {
 		return nil, err

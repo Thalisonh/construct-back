@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"construct-backend/internal/core/domain"
 	"construct-backend/internal/core/ports"
 	"fmt"
 	"net/http"
@@ -47,7 +48,17 @@ func (h *ProjectHandler) CreateProject(c *gin.Context) {
 
 func (h *ProjectHandler) ListProjects(c *gin.Context) {
 	companyID := c.GetString("company_id")
-	projects, err := h.projectService.ListProjects(companyID)
+	clientID := c.Query("client_id")
+
+	var projects []domain.Project
+	var err error
+
+	if clientID != "" {
+		projects, err = h.projectService.ListProjectsByClient(clientID, companyID)
+	} else {
+		projects, err = h.projectService.ListProjects(companyID)
+	}
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -154,6 +165,10 @@ func (h *ProjectHandler) AddTask(c *gin.Context) {
 	c.JSON(http.StatusCreated, task)
 }
 
+type updateTaskRequest struct {
+	Status string `json:"status"`
+}
+
 func (h *ProjectHandler) UpdateTask(c *gin.Context) {
 	companyID := c.GetString("company_id")
 	if companyID == "" {
@@ -162,8 +177,11 @@ func (h *ProjectHandler) UpdateTask(c *gin.Context) {
 	}
 
 	id := c.Param("taskId")
+	var req updateTaskRequest
+	// We use ShouldBindJSON but don't error out if it fails, to maintain compatibility with parameterless PUT (toggle)
+	c.ShouldBindJSON(&req)
 
-	task, err := h.projectService.UpdateTask(id, companyID)
+	task, err := h.projectService.UpdateTask(id, companyID, req.Status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
