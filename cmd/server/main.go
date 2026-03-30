@@ -2,6 +2,7 @@ package main
 
 import (
 	"construct-backend/internal/adapters/handler"
+	"construct-backend/internal/adapters/payment"
 	"construct-backend/internal/adapters/repository"
 	"construct-backend/internal/core/domain"
 	"construct-backend/internal/core/ports"
@@ -30,6 +31,7 @@ func main() {
 		projectRepo ports.ProjectRepository
 		linkRepo    ports.LinkRepository
 		companyRepo ports.CompanyRepository
+		subRepo     ports.SubscriptionRepository
 	)
 
 	dsn := os.Getenv("POSTGRES_DSN")
@@ -51,6 +53,7 @@ func main() {
 	projectRepo = pgRepo
 	linkRepo = pgRepo
 	companyRepo = pgRepo
+	subRepo = pgRepo
 	clientRepo := pgRepo
 	log.Println("Connected to PostgreSQL")
 
@@ -62,16 +65,30 @@ func main() {
 	clientService := services.NewClientService(clientRepo)
 	companyService := services.NewCompanyService(companyRepo)
 
+	// Payment Gateway (Mercado Pago Adapter — troque aqui para mudar de provider)
+	mpToken := os.Getenv("MP_ACCESS_TOKEN")
+	mpSuccessURL := os.Getenv("MP_SUCCESS_URL")
+	mpFailureURL := os.Getenv("MP_FAILURE_URL")
+	if mpSuccessURL == "" {
+		mpSuccessURL = "http://localhost:5173/dashboard"
+	}
+	if mpFailureURL == "" {
+		mpFailureURL = "http://localhost:5173/checkout"
+	}
+	gateway := payment.NewMercadoPagoAdapter(mpToken, mpSuccessURL, mpFailureURL)
+	subscriptionService := services.NewSubscriptionService(gateway, companyRepo, subRepo, mpSuccessURL, mpFailureURL)
+
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
-	projectHandler := handler.NewProjectHandler(projectService)
+	projectHandler := handler.NewProjectHandler(projectService, subscriptionService)
 	linkHandler := handler.NewLinkHandler(linkService)
 	userHandler := handler.NewUserHandler(userService)
 	clientHandler := handler.NewClientHandler(clientService)
 	companyHandler := handler.NewCompanyHandler(companyService, userService)
+	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService)
 
 	// Router
-	r := handler.SetupRouter(authHandler, userHandler, projectHandler, linkHandler, clientHandler, companyHandler, jwtSecret)
+	r := handler.SetupRouter(authHandler, userHandler, projectHandler, linkHandler, clientHandler, companyHandler, subscriptionHandler, jwtSecret)
 
 	log.Println("Server starting on :8080")
 	if err := r.Run(":8080"); err != nil {

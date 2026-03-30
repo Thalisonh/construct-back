@@ -3,19 +3,23 @@ package handler
 import (
 	"construct-backend/internal/core/domain"
 	"construct-backend/internal/core/ports"
+	"construct-backend/internal/core/services"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ProjectHandler struct {
-	projectService ports.ProjectService
+	projectService      ports.ProjectService
+	subscriptionService *services.SubscriptionService
 }
 
-func NewProjectHandler(projectService ports.ProjectService) *ProjectHandler {
+func NewProjectHandler(projectService ports.ProjectService, subscriptionService *services.SubscriptionService) *ProjectHandler {
 	return &ProjectHandler{
-		projectService: projectService,
+		projectService:      projectService,
+		subscriptionService: subscriptionService,
 	}
 }
 
@@ -34,6 +38,19 @@ func (h *ProjectHandler) CreateProject(c *gin.Context) {
 	var req createProjectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Verifica se o plano permite criar mais obras
+	if err := h.subscriptionService.CheckProjectLimit(companyID); err != nil {
+		if strings.HasPrefix(err.Error(), "limite_atingido") {
+			c.JSON(http.StatusPaymentRequired, gin.H{
+				"error":        err.Error(),
+				"upgrade_required": true,
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

@@ -282,3 +282,22 @@ func (r *PostgresRepository) GetCompanyByID(id string) (*domain.Company, error) 
 func (r *PostgresRepository) UpdateCompany(company *domain.Company) error {
 	return r.db.Save(company).Error
 }
+
+func (r *PostgresRepository) UpdateCompanyPlan(companyID, plan, status, subscriptionID string, expiresAt *time.Time) error {
+	return r.db.Model(&domain.Company{}).Where("id = ?", companyID).Updates(map[string]interface{}{
+		"plan":            plan,
+		"plan_status":     status,
+		"subscription_id": subscriptionID,
+		"plan_expires_at": expiresAt,
+		"updated_at":      time.Now(),
+	}).Error
+}
+
+// SubscriptionRepository Implementation
+
+func (r *PostgresRepository) CountProjectsByCompany(companyID string) (int64, error) {
+	var count int64
+	err := r.db.Model(&domain.Project{}).Where("company_id = ?", companyID).Count(&count).Error
+	return count, err
+}
+

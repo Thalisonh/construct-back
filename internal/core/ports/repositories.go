@@ -1,6 +1,9 @@
 package ports
 
-import "construct-backend/internal/core/domain"
+import (
+	"construct-backend/internal/core/domain"
+	"time"
+)
 
 type UserRepository interface {
 	CreateUser(user *domain.User) error
@@ -57,4 +60,9 @@ type CompanyRepository interface {
 	CreateCompany(company *domain.Company) error
 	GetCompanyByID(id string) (*domain.Company, error)
 	UpdateCompany(company *domain.Company) error
+	UpdateCompanyPlan(companyID, plan, status, subscriptionID string, expiresAt *time.Time) error
+}
+
+type SubscriptionRepository interface {
+	CountProjectsByCompany(companyID string) (int64, error)
 }

@@ -17,6 +17,7 @@ func SetupRouter(
 	linkHandler *LinkHandler,
 	clientHandler *ClientHandler,
 	companyHandler *CompanyHandler,
+	subscriptionHandler *SubscriptionHandler,
 	jwtSecret string,
 ) *gin.Engine {
 	r := gin.Default()
@@ -34,6 +35,8 @@ func SetupRouter(
 	r.GET("/public/profile/:username", userHandler.GetPublicProfile)
 	r.GET("/public/projects/:id", projectHandler.GetPublicProject)
 	r.POST("/click/link/:id", linkHandler.TrackClick)
+	// Webhook do gateway de pagamento — sem autenticação JWT (validado por assinatura)
+	r.POST("/webhooks/payment", subscriptionHandler.HandleWebhook)
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "OK"})
 	})
@@ -84,6 +87,10 @@ func SetupRouter(
 		api.PUT("/company", companyHandler.UpdateCompany)
 		api.GET("/company/members", companyHandler.ListMembers)
 		api.POST("/company/members", companyHandler.AddMember)
+
+		// Subscription routes
+		api.POST("/checkout", subscriptionHandler.CreateCheckout)
+		api.GET("/subscription/status", subscriptionHandler.GetSubscriptionStatus)
 	}
 
 	return r
