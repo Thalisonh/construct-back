@@ -47,7 +47,7 @@ func main() {
 
 	// Auto Migrate
 	// Auto Migrate
-	db.AutoMigrate(&domain.User{}, &domain.Project{}, &domain.Link{}, &domain.Client{}, &domain.Comment{}, &domain.Task{}, &domain.Subtask{}, &domain.LinkClick{}, &domain.Company{})
+	db.AutoMigrate(&domain.User{}, &domain.Project{}, &domain.Link{}, &domain.Client{}, &domain.Comment{}, &domain.Task{}, &domain.Subtask{}, &domain.LinkClick{}, &domain.Company{}, &domain.DiaryEntry{}, &domain.DiaryItem{})
 
 	pgRepo := repository.NewPostgresRepository(db)
 	userRepo = pgRepo

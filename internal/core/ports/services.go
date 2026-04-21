@@ -27,6 +27,11 @@ type ProjectService interface {
 	GetTask(id, companyID string) (*domain.Task, error)
 	GetSubtask(id, companyID string) (*domain.Subtask, error)
 	ListTasks(projectID string) ([]domain.Task, error)
+	CreateDiaryEntry(projectID, companyID, userID, entryDate, title string, items []domain.DiaryItem) (*domain.DiaryEntry, error)
+	ListDiaryEntries(projectID, companyID string) ([]domain.DiaryEntry, error)
+	ListPublicDiaryEntries(projectID string) ([]domain.DiaryEntry, error)
+	UpdateDiaryEntry(entryID, projectID, companyID, entryDate, title string, items []domain.DiaryItem) (*domain.DiaryEntry, error)
+	DeleteDiaryEntry(entryID, projectID, companyID string) error
 }
 
 type LinkService interface {

@@ -21,6 +21,30 @@ type Project struct {
 	IsPublic  bool      `bson:"is_public" json:"is_public" datastore:"is_public"`
 }
 
+type DiaryEntry struct {
+	ID        string      `json:"id" gorm:"primaryKey"`
+	ProjectID string      `json:"project_id" gorm:"index"`
+	UserID    string      `json:"created_by" gorm:"index"`
+	CompanyID string      `json:"company_id" gorm:"index"`
+	EntryDate time.Time   `json:"entry_date"`
+	Title     string      `json:"title"`
+	Items     []DiaryItem `json:"items" gorm:"foreignKey:DiaryEntryID"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
+}
+
+type DiaryItem struct {
+	ID           string    `json:"id" gorm:"primaryKey"`
+	DiaryEntryID string    `json:"diary_entry_id" gorm:"index"`
+	Type         string    `json:"type"`
+	Label        string    `json:"label"`
+	Content      string    `json:"content"`
+	Visibility   string    `json:"visibility" gorm:"index"`
+	SortOrder    int       `json:"sort_order"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
 type Task struct {
 	ID        string    `bson:"_id" json:"id" datastore:"-" gorm:"primaryKey"`
 	ProjectID string    `bson:"project_id" json:"project_id" datastore:"project_id"`

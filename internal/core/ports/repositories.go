@@ -38,6 +38,12 @@ type ProjectRepository interface {
 	GetTaskByID(id, companyID string) (*domain.Task, error)
 	GetSubtaskByID(id, companyID string) (*domain.Subtask, error)
 	GetTasksByProjectID(projectID string) ([]domain.Task, error)
+	CreateDiaryEntry(entry *domain.DiaryEntry) error
+	GetDiaryEntriesByProject(projectID, companyID string) ([]domain.DiaryEntry, error)
+	GetPublicDiaryEntriesByProject(projectID string) ([]domain.DiaryEntry, error)
+	GetDiaryEntryByID(id, projectID, companyID string) (*domain.DiaryEntry, error)
+	UpdateDiaryEntry(entry *domain.DiaryEntry) error
+	DeleteDiaryEntry(id, projectID, companyID string) error
 }
 
 type LinkRepository interface {

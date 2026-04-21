@@ -35,6 +35,7 @@ func SetupRouter(
 	r.POST("/auth/verify", authHandler.TokenVerify)
 	r.GET("/public/company/:slug", companyHandler.GetPublicPage)
 	r.GET("/public/projects/:id", projectHandler.GetPublicProject)
+	r.GET("/public/projects/:id/diary", projectHandler.ListPublicDiaryEntries)
 	r.POST("/click/link/:id", linkHandler.TrackClick)
 	// Webhook do gateway de pagamento — sem autenticação JWT (validado por assinatura)
 	r.POST("/webhooks/payment", subscriptionHandler.HandleWebhook)
@@ -63,6 +64,10 @@ func SetupRouter(
 
 		api.POST("/projects/:id/tasks", projectHandler.AddTask)
 		api.GET("/projects/:id/tasks", projectHandler.ListTasks)
+		api.POST("/projects/:id/diary", projectHandler.CreateDiaryEntry)
+		api.GET("/projects/:id/diary", projectHandler.ListDiaryEntries)
+		api.PUT("/projects/:id/diary/:entryId", projectHandler.UpdateDiaryEntry)
+		api.DELETE("/projects/:id/diary/:entryId", projectHandler.DeleteDiaryEntry)
 		api.GET("/tasks/:taskId", projectHandler.GetTask)
 		api.PUT("/tasks/:taskId", projectHandler.UpdateTask)
 		api.DELETE("/tasks/:taskId", projectHandler.DeleteTask)

@@ -202,6 +202,93 @@ func (r *PostgresRepository) GetTasksByProjectID(projectID string) ([]domain.Tas
 	return tasks, nil
 }
 
+func (r *PostgresRepository) CreateDiaryEntry(entry *domain.DiaryEntry) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Omit("Items").Create(entry).Error; err != nil {
+			return err
+		}
+		if len(entry.Items) == 0 {
+			return nil
+		}
+		return tx.Create(&entry.Items).Error
+	})
+}
+
+func (r *PostgresRepository) GetDiaryEntriesByProject(projectID, companyID string) ([]domain.DiaryEntry, error) {
+	var entries []domain.DiaryEntry
+	err := r.db.
+		Preload("Items", func(db *gorm.DB) *gorm.DB {
+			return db.Order("sort_order ASC").Order("created_at ASC")
+		}).
+		Where("project_id = ? AND company_id = ?", projectID, companyID).
+		Order("entry_date DESC").
+		Order("created_at DESC").
+		Find(&entries).Error
+	return entries, err
+}
+
+func (r *PostgresRepository) GetPublicDiaryEntriesByProject(projectID string) ([]domain.DiaryEntry, error) {
+	var entries []domain.DiaryEntry
+	publicEntryIDs := r.db.Model(&domain.DiaryItem{}).
+		Select("DISTINCT diary_entry_id").
+		Where("visibility = ?", "public")
+
+	err := r.db.
+		Preload("Items", func(db *gorm.DB) *gorm.DB {
+			return db.Where("visibility = ?", "public").Order("sort_order ASC").Order("created_at ASC")
+		}).
+		Where("project_id = ? AND id IN (?)", projectID, publicEntryIDs).
+		Order("entry_date DESC").
+		Order("created_at DESC").
+		Find(&entries).Error
+	return entries, err
+}
+
+func (r *PostgresRepository) GetDiaryEntryByID(id, projectID, companyID string) (*domain.DiaryEntry, error) {
+	var entry domain.DiaryEntry
+	if err := r.db.
+		Preload("Items", func(db *gorm.DB) *gorm.DB {
+			return db.Order("sort_order ASC").Order("created_at ASC")
+		}).
+		Where("id = ? AND project_id = ? AND company_id = ?", id, projectID, companyID).
+		First(&entry).Error; err != nil {
+		return nil, err
+	}
+	return &entry, nil
+}
+
+func (r *PostgresRepository) UpdateDiaryEntry(entry *domain.DiaryEntry) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&domain.DiaryEntry{}).
+			Where("id = ? AND project_id = ? AND company_id = ?", entry.ID, entry.ProjectID, entry.CompanyID).
+			Updates(map[string]interface{}{
+				"entry_date": entry.EntryDate,
+				"title":      entry.Title,
+				"updated_at": entry.UpdatedAt,
+			}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("diary_entry_id = ?", entry.ID).Delete(&domain.DiaryItem{}).Error; err != nil {
+			return err
+		}
+
+		if len(entry.Items) == 0 {
+			return nil
+		}
+		return tx.Create(&entry.Items).Error
+	})
+}
+
+func (r *PostgresRepository) DeleteDiaryEntry(id, projectID, companyID string) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("diary_entry_id = ?", id).Delete(&domain.DiaryItem{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&domain.DiaryEntry{}, "id = ? AND project_id = ? AND company_id = ?", id, projectID, companyID).Error
+	})
+}
+
 // LinkRepository Implementation
 
 func (r *PostgresRepository) CreateLink(link *domain.Link) error {

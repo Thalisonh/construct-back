@@ -233,3 +233,118 @@ func (s *ProjectService) ListTasks(projectID string) ([]domain.Task, error) {
 
 	return tasks, nil
 }
+
+func (s *ProjectService) CreateDiaryEntry(projectID, companyID, userID, entryDate, title string, items []domain.DiaryItem) (*domain.DiaryEntry, error) {
+	_, err := s.projectRepo.GetProjectByID(projectID, companyID)
+	if err != nil {
+		return nil, fmt.Errorf("project not found or access denied")
+	}
+
+	parsedEntryDate, err := time.Parse("2006-01-02", entryDate)
+	if err != nil {
+		parsedEntryDate, err = time.Parse(time.RFC3339, entryDate)
+		if err != nil {
+			return nil, fmt.Errorf("invalid entry date")
+		}
+	}
+
+	now := time.Now()
+	entry := &domain.DiaryEntry{
+		ID:        uuid.New().String(),
+		ProjectID: projectID,
+		UserID:    userID,
+		CompanyID: companyID,
+		EntryDate: parsedEntryDate,
+		Title:     title,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	for index, item := range items {
+		entry.Items = append(entry.Items, domain.DiaryItem{
+			ID:           uuid.New().String(),
+			DiaryEntryID: entry.ID,
+			Type:         item.Type,
+			Label:        item.Label,
+			Content:      item.Content,
+			Visibility:   item.Visibility,
+			SortOrder:    index,
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		})
+	}
+
+	if err := s.projectRepo.CreateDiaryEntry(entry); err != nil {
+		return nil, err
+	}
+
+	return entry, nil
+}
+
+func (s *ProjectService) ListDiaryEntries(projectID, companyID string) ([]domain.DiaryEntry, error) {
+	_, err := s.projectRepo.GetProjectByID(projectID, companyID)
+	if err != nil {
+		return nil, fmt.Errorf("project not found or access denied")
+	}
+
+	return s.projectRepo.GetDiaryEntriesByProject(projectID, companyID)
+}
+
+func (s *ProjectService) ListPublicDiaryEntries(projectID string) ([]domain.DiaryEntry, error) {
+	_, err := s.projectRepo.GetPublicProjectByID(projectID)
+	if err != nil {
+		return nil, fmt.Errorf("project not found or not public")
+	}
+
+	return s.projectRepo.GetPublicDiaryEntriesByProject(projectID)
+}
+
+func (s *ProjectService) UpdateDiaryEntry(entryID, projectID, companyID, entryDate, title string, items []domain.DiaryItem) (*domain.DiaryEntry, error) {
+	entry, err := s.projectRepo.GetDiaryEntryByID(entryID, projectID, companyID)
+	if err != nil {
+		return nil, fmt.Errorf("diary entry not found")
+	}
+
+	parsedEntryDate, err := time.Parse("2006-01-02", entryDate)
+	if err != nil {
+		parsedEntryDate, err = time.Parse(time.RFC3339, entryDate)
+		if err != nil {
+			return nil, fmt.Errorf("invalid entry date")
+		}
+	}
+
+	now := time.Now()
+	entry.EntryDate = parsedEntryDate
+	entry.Title = title
+	entry.UpdatedAt = now
+	entry.Items = nil
+
+	for index, item := range items {
+		entry.Items = append(entry.Items, domain.DiaryItem{
+			ID:           uuid.New().String(),
+			DiaryEntryID: entry.ID,
+			Type:         item.Type,
+			Label:        item.Label,
+			Content:      item.Content,
+			Visibility:   item.Visibility,
+			SortOrder:    index,
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		})
+	}
+
+	if err := s.projectRepo.UpdateDiaryEntry(entry); err != nil {
+		return nil, err
+	}
+
+	return entry, nil
+}
+
+func (s *ProjectService) DeleteDiaryEntry(entryID, projectID, companyID string) error {
+	_, err := s.projectRepo.GetDiaryEntryByID(entryID, projectID, companyID)
+	if err != nil {
+		return fmt.Errorf("diary entry not found")
+	}
+
+	return s.projectRepo.DeleteDiaryEntry(entryID, projectID, companyID)
+}

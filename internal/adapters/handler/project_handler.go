@@ -45,7 +45,7 @@ func (h *ProjectHandler) CreateProject(c *gin.Context) {
 	if err := h.subscriptionService.CheckProjectLimit(companyID); err != nil {
 		if strings.HasPrefix(err.Error(), "limite_atingido") {
 			c.JSON(http.StatusPaymentRequired, gin.H{
-				"error":        err.Error(),
+				"error":            err.Error(),
 				"upgrade_required": true,
 			})
 			return
@@ -228,6 +228,31 @@ type createSubtaskRequest struct {
 	Status string `json:"status" binding:"required"`
 }
 
+type diaryItemRequest struct {
+	Type       string `json:"type" binding:"required"`
+	Label      string `json:"label"`
+	Content    string `json:"content" binding:"required"`
+	Visibility string `json:"visibility" binding:"required"`
+}
+
+type diaryEntryRequest struct {
+	EntryDate string             `json:"entry_date" binding:"required"`
+	Title     string             `json:"title"`
+	Items     []diaryItemRequest `json:"items" binding:"required,min=1"`
+}
+
+func validateDiaryItems(items []diaryItemRequest) error {
+	for _, item := range items {
+		if item.Type != "text" && item.Type != "field" {
+			return fmt.Errorf("invalid diary item type")
+		}
+		if item.Visibility != "public" && item.Visibility != "internal" {
+			return fmt.Errorf("invalid diary item visibility")
+		}
+	}
+	return nil
+}
+
 func (h *ProjectHandler) AddSubtask(c *gin.Context) {
 	userID := c.GetString("user_id")
 	companyID := c.GetString("company_id")
@@ -250,6 +275,129 @@ func (h *ProjectHandler) AddSubtask(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, subtask)
+}
+
+func (h *ProjectHandler) CreateDiaryEntry(c *gin.Context) {
+	userID := c.GetString("user_id")
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	projectID := c.Param("id")
+	var req diaryEntryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := validateDiaryItems(req.Items); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	items := make([]domain.DiaryItem, 0, len(req.Items))
+	for _, item := range req.Items {
+		items = append(items, domain.DiaryItem{
+			Type:       item.Type,
+			Label:      item.Label,
+			Content:    item.Content,
+			Visibility: item.Visibility,
+		})
+	}
+
+	entry, err := h.projectService.CreateDiaryEntry(projectID, companyID, userID, req.EntryDate, req.Title, items)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, entry)
+}
+
+func (h *ProjectHandler) ListDiaryEntries(c *gin.Context) {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	projectID := c.Param("id")
+	entries, err := h.projectService.ListDiaryEntries(projectID, companyID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, entries)
+}
+
+func (h *ProjectHandler) ListPublicDiaryEntries(c *gin.Context) {
+	projectID := c.Param("id")
+	entries, err := h.projectService.ListPublicDiaryEntries(projectID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "diary not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, entries)
+}
+
+func (h *ProjectHandler) UpdateDiaryEntry(c *gin.Context) {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	projectID := c.Param("id")
+	entryID := c.Param("entryId")
+	var req diaryEntryRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := validateDiaryItems(req.Items); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	items := make([]domain.DiaryItem, 0, len(req.Items))
+	for _, item := range req.Items {
+		items = append(items, domain.DiaryItem{
+			Type:       item.Type,
+			Label:      item.Label,
+			Content:    item.Content,
+			Visibility: item.Visibility,
+		})
+	}
+
+	entry, err := h.projectService.UpdateDiaryEntry(entryID, projectID, companyID, req.EntryDate, req.Title, items)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, entry)
+}
+
+func (h *ProjectHandler) DeleteDiaryEntry(c *gin.Context) {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	projectID := c.Param("id")
+	entryID := c.Param("entryId")
+	if err := h.projectService.DeleteDiaryEntry(entryID, projectID, companyID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
 func (h *ProjectHandler) UpdateSubtask(c *gin.Context) {
