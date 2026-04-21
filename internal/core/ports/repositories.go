@@ -49,6 +49,7 @@ type ProjectRepository interface {
 type LinkRepository interface {
 	CreateLink(link *domain.Link) error
 	GetAllLinks(companyID string) ([]domain.Link, error)
+	GetLinkAnalytics(companyID string, startDate, endDate *time.Time) ([]domain.LinkAnalyticsItem, error)
 	UpdateLink(link *domain.Link) error
 	DeleteLink(id, companyID string) error
 	RegisterClick(linkID string) error

@@ -38,6 +38,7 @@ type LinkService interface {
 	CreateLink(companyID, userID, url, description string) (*domain.Link, error)
 	UpdateLink(companyID, url, description, id string) (*domain.Link, error)
 	ListLinks(companyID string) ([]domain.Link, error)
+	GetLinkAnalytics(companyID, startDate, endDate string) (*domain.LinkAnalyticsResponse, error)
 	DeleteLink(id, companyID string) error
 	TrackLinkClick(id string) error
 }

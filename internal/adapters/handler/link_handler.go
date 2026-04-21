@@ -66,6 +66,31 @@ func (h *LinkHandler) ListLinks(c *gin.Context) {
 	c.JSON(http.StatusOK, links)
 }
 
+func (h *LinkHandler) GetAnalytics(c *gin.Context) {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	analytics, err := h.linkService.GetLinkAnalytics(
+		companyID,
+		c.Query("start_date"),
+		c.Query("end_date"),
+	)
+	if err != nil {
+		switch err.Error() {
+		case "invalid start_date", "invalid end_date", "start_date cannot be after end_date", "start_date and end_date must be provided together":
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, analytics)
+}
+
 func (h *LinkHandler) DeleteLink(c *gin.Context) {
 	companyID := c.GetString("company_id")
 	role := c.GetString("role")

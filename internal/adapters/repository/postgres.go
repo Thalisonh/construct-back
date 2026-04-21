@@ -303,6 +303,42 @@ func (r *PostgresRepository) GetAllLinks(companyID string) ([]domain.Link, error
 	return links, nil
 }
 
+func (r *PostgresRepository) GetLinkAnalytics(companyID string, startDate, endDate *time.Time) ([]domain.LinkAnalyticsItem, error) {
+	var analytics []domain.LinkAnalyticsItem
+
+	joinClause := "LEFT JOIN link_clicks ON link_clicks.link_id = links.id"
+	joinArgs := []interface{}{}
+	if startDate != nil {
+		joinClause += " AND link_clicks.created_at >= ?"
+		joinArgs = append(joinArgs, *startDate)
+	}
+	if endDate != nil {
+		joinClause += " AND link_clicks.created_at < ?"
+		joinArgs = append(joinArgs, *endDate)
+	}
+
+	query := r.db.Table("links").
+		Select(`
+			links.id,
+			links.description,
+			links.url,
+			COALESCE(COUNT(link_clicks.id), 0) as clicks
+		`).
+		Joins(joinClause, joinArgs...).
+		Where("links.company_id = ?", companyID)
+
+	err := query.
+		Group("links.id, links.description, links.url").
+		Order("clicks DESC").
+		Order("links.description ASC").
+		Scan(&analytics).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return analytics, nil
+}
+
 func (r *PostgresRepository) UpdateLink(link *domain.Link) error {
 	return r.db.Where("company_id = ?", link.CompanyID).Save(link).Error
 }

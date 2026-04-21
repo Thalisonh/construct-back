@@ -78,6 +78,7 @@ func SetupRouter(
 		api.DELETE("/subtasks/:subtaskId", projectHandler.DeleteSubtask)
 
 		api.GET("/links", linkHandler.ListLinks)
+		api.GET("/links/analytics", linkHandler.GetAnalytics)
 		api.POST("/links", linkHandler.CreateLink)
 		api.DELETE("/links/:id", linkHandler.DeleteLink)
 		api.PUT("/links/:id", linkHandler.UpdateLink)
