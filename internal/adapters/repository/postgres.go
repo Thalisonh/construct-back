@@ -54,6 +54,14 @@ func (r *PostgresRepository) UpdateUsername(userID, username string) error {
 	return r.db.Model(&domain.User{}).Where("id = ?", userID).Update("username", username).Error
 }
 
+func (r *PostgresRepository) UpdateUserCompany(userID, companyID, role string) error {
+	return r.db.Model(&domain.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+		"company_id": companyID,
+		"role":       role,
+		"updated_at": time.Now(),
+	}).Error
+}
+
 func (r *PostgresRepository) GetUsername(userID string) (string, error) {
 	var user domain.User
 	if err := r.db.Select("username").Where("id = ?", userID).First(&user).Error; err != nil {
@@ -300,4 +308,3 @@ func (r *PostgresRepository) CountProjectsByCompany(companyID string) (int64, er
 	err := r.db.Model(&domain.Project{}).Where("company_id = ?", companyID).Count(&count).Error
 	return count, err
 }
-

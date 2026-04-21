@@ -30,6 +30,17 @@ func NewAuthService(userRepo ports.UserRepository, companyRepo ports.CompanyRepo
 	}
 }
 
+func (s *AuthService) buildToken(user *domain.User) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":    user.ID,
+		"company_id": user.CompanyID,
+		"role":       user.Role,
+		"exp":        time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	return token.SignedString([]byte(s.secret))
+}
+
 func (s *AuthService) Signup(email, password, name, companyName, cnpj string) (string, error) {
 	existingUser, _ := s.userRepo.GetUserByEmail(email)
 	if existingUser != nil {
@@ -71,14 +82,7 @@ func (s *AuthService) Signup(email, password, name, companyName, cnpj string) (s
 		return "", err
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":    user.ID,
-		"company_id": user.CompanyID,
-		"role":       user.Role,
-		"exp":        time.Now().Add(time.Hour * 24).Unix(),
-	})
-
-	tokenString, err := token.SignedString([]byte(s.secret))
+	tokenString, err := s.buildToken(user)
 	if err != nil {
 		return "", err
 	}
@@ -96,14 +100,7 @@ func (s *AuthService) Login(email, password string) (string, error) {
 		return "", errors.New("invalid credentials")
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":    user.ID,
-		"company_id": user.CompanyID,
-		"role":       user.Role,
-		"exp":        time.Now().Add(time.Hour * 24).Unix(),
-	})
-
-	tokenString, err := token.SignedString([]byte(s.secret))
+	tokenString, err := s.buildToken(user)
 	if err != nil {
 		return "", err
 	}
@@ -125,32 +122,66 @@ func (s *AuthService) LoginWithGoogle(idToken string) (string, error) {
 	}
 
 	if user == nil {
-		// Create new user if not exists
+		name, _ := payload.Claims["name"].(string)
+
+		// Create new user if not exists — role padrão "member" evita JWT com campos vazios
 		user = &domain.User{
 			ID:        uuid.New().String(),
 			Email:     email,
+			Name:      name,
+			Role:      "member",
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
+		}
+		if user.Name != "" {
+			user.Username = Slugify(user.Name)
 		}
 		if err := s.userRepo.CreateUser(user); err != nil {
 			return "", err
 		}
 	}
 
-	// Generate JWT
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":    user.ID,
-		"company_id": user.CompanyID,
-		"role":       user.Role,
-		"exp":        time.Now().Add(time.Hour * 24).Unix(),
-	})
-
-	tokenString, err := token.SignedString([]byte(s.secret))
+	tokenString, err := s.buildToken(user)
 	if err != nil {
 		return "", err
 	}
 
 	return tokenString, nil
+}
+
+func (s *AuthService) CompleteGoogleCompanySetup(userID, companyName, cnpj, phone, address string) (string, error) {
+	user, err := s.userRepo.GetUserByID(userID)
+	if err != nil {
+		return "", errors.New("user not found")
+	}
+
+	if user.CompanyID != "" {
+		return "", errors.New("company already configured")
+	}
+
+	company := &domain.Company{
+		ID:        uuid.New().String(),
+		Name:      companyName,
+		CNPJ:      cnpj,
+		Email:     user.Email,
+		Phone:     phone,
+		Address:   address,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	if err := s.companyRepo.CreateCompany(company); err != nil {
+		return "", err
+	}
+
+	if err := s.userRepo.UpdateUserCompany(user.ID, company.ID, "admin"); err != nil {
+		return "", err
+	}
+
+	user.CompanyID = company.ID
+	user.Role = "admin"
+
+	return s.buildToken(user)
 }
 
 func (s *AuthService) VerifyToken(token string) error {

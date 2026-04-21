@@ -66,6 +66,13 @@ type googleLoginRequest struct {
 	IDToken string `json:"id_token" binding:"required"`
 }
 
+type setupCompanyRequest struct {
+	CompanyName string `json:"company_name" binding:"required"`
+	CNPJ        string `json:"cnpj" binding:"required"`
+	Phone       string `json:"phone" binding:"required"`
+	Address     string `json:"address" binding:"required"`
+}
+
 func (h *AuthHandler) GoogleLogin(c *gin.Context) {
 	var req googleLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -76,6 +83,28 @@ func (h *AuthHandler) GoogleLogin(c *gin.Context) {
 	token, err := h.authService.LoginWithGoogle(req.IDToken)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+func (h *AuthHandler) SetupCompany(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var req setupCompanyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token, err := h.authService.CompleteGoogleCompanySetup(userID, req.CompanyName, req.CNPJ, req.Phone, req.Address)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 

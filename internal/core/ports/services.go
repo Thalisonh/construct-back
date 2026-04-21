@@ -6,6 +6,7 @@ type AuthService interface {
 	Signup(email, password, name, companyName, cnpj string) (string, error)
 	Login(email, password string) (string, error)
 	LoginWithGoogle(idToken string) (string, error)
+	CompleteGoogleCompanySetup(userID, companyName, cnpj, phone, address string) (string, error)
 	VerifyToken(token string) error
 }
 

@@ -11,6 +11,7 @@ type UserRepository interface {
 	GetUserByID(id string) (*domain.User, error)
 	VerifyUserName(username string) (*domain.UsernameVerification, error)
 	UpdateUsername(userID, username string) error
+	UpdateUserCompany(userID, companyID, role string) error
 	GetUsername(userID string) (string, error)
 	GetPublicProfile(username string) (*domain.PublicProfile, error)
 	UpdateBio(userID, bio string) error

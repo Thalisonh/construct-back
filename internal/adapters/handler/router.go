@@ -46,6 +46,7 @@ func SetupRouter(
 	{
 		api.GET("/username", userHandler.VerifyUserName)
 		api.POST("/username", userHandler.UpdateUsername)
+		api.POST("/auth/setup-company", authHandler.SetupCompany)
 		api.POST("/profile/avatar", userHandler.UploadAvatar)
 		api.POST("/profile/bio", userHandler.UpdateBio)
 		api.GET("/profile", userHandler.GetProfile)
