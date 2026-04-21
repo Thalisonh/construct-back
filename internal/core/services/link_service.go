@@ -54,7 +54,14 @@ func (s *LinkService) UpdateLink(companyID, url, description, id string) (*domai
 }
 
 func (s *LinkService) ListLinks(companyID string) ([]domain.Link, error) {
-	return s.linkRepo.GetAllLinks(companyID)
+	links, err := s.linkRepo.GetAllLinks(companyID)
+	if err != nil {
+		return nil, err
+	}
+	if links == nil {
+		return []domain.Link{}, nil
+	}
+	return links, nil
 }
 
 func (s *LinkService) GetLinkAnalytics(companyID, startDate, endDate string) (*domain.LinkAnalyticsResponse, error) {
@@ -95,6 +102,9 @@ func (s *LinkService) GetLinkAnalytics(companyID, startDate, endDate string) (*d
 	analytics, err := s.linkRepo.GetLinkAnalytics(companyID, startTime, endTime)
 	if err != nil {
 		return nil, err
+	}
+	if analytics == nil {
+		analytics = []domain.LinkAnalyticsItem{}
 	}
 
 	response := &domain.LinkAnalyticsResponse{
