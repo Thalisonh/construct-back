@@ -44,7 +44,7 @@ type UserService interface {
 	GetPublicProfile(username string) (*domain.PublicProfile, error)
 	UpdateBio(userID, bio string) error
 	GetProfile(userID string) (*domain.User, error)
-	UpdateProfile(userID, name, email, phone, companyID string) error
+	UpdateProfile(userID, name, email, phone string) error
 	UpdatePassword(userID, oldPassword, newPassword string) error
 	GetCompanyMembers(companyID string) ([]domain.User, error)
 	AddCompanyMember(companyID, email, name, password, role string) (*domain.User, error)
@@ -63,6 +63,8 @@ type CompanyService interface {
 	CreateCompany(name, cnpj, email, phone, address string) (*domain.Company, error)
 	GetCompany(id string) (*domain.Company, error)
 	UpdateCompany(id, name, email, phone, address string) (*domain.Company, error)
+	UpdatePublicPage(companyID, slug, publicName, bio string) (*domain.Company, error)
+	GetPublicPageBySlug(slug string) (*domain.PublicCompanyProfile, error)
 }
 
 type DashboardService interface {

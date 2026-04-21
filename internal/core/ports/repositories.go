@@ -60,6 +60,7 @@ type ClientRepository interface {
 type CompanyRepository interface {
 	CreateCompany(company *domain.Company) error
 	GetCompanyByID(id string) (*domain.Company, error)
+	GetCompanyBySlug(slug string) (*domain.Company, error)
 	UpdateCompany(company *domain.Company) error
 	UpdateCompanyPlan(companyID, plan, status, subscriptionID string, expiresAt *time.Time) error
 }

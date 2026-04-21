@@ -140,10 +140,9 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 }
 
 type updateProfileRequest struct {
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	Phone     string `json:"phone"`
-	CompanyID string `json:"company_id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
 }
 
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
@@ -159,7 +158,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	if err := h.userService.UpdateProfile(userID.(string), req.Name, req.Email, req.Phone, req.CompanyID); err != nil {
+	if err := h.userService.UpdateProfile(userID.(string), req.Name, req.Email, req.Phone); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

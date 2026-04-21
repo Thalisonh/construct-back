@@ -21,14 +21,8 @@ func NewCompanyHandler(companyService ports.CompanyService, userService ports.Us
 
 func (h *CompanyHandler) GetCompany(c *gin.Context) {
 	companyID := c.GetString("company_id")
-	role := c.GetString("role")
 	if companyID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	if role != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Admin access required"})
 		return
 	}
 
@@ -46,6 +40,12 @@ type updateCompanyRequest struct {
 	Email   string `json:"email" binding:"required,email"`
 	Phone   string `json:"phone" binding:"required"`
 	Address string `json:"address" binding:"required"`
+}
+
+type updatePublicPageRequest struct {
+	Slug       string `json:"slug" binding:"required"`
+	PublicName string `json:"public_name" binding:"required"`
+	Bio        string `json:"bio"`
 }
 
 func (h *CompanyHandler) UpdateCompany(c *gin.Context) {
@@ -74,6 +74,50 @@ func (h *CompanyHandler) UpdateCompany(c *gin.Context) {
 	company, err := h.companyService.UpdateCompany(companyID, req.Name, req.Email, req.Phone, req.Address)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, company)
+}
+
+func (h *CompanyHandler) GetPublicPage(c *gin.Context) {
+	slug := c.Param("slug")
+	if slug == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "slug is required"})
+		return
+	}
+
+	profile, err := h.companyService.GetPublicPageBySlug(slug)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "public page not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, profile)
+}
+
+func (h *CompanyHandler) UpdatePublicPage(c *gin.Context) {
+	companyID := c.GetString("company_id")
+	role := c.GetString("role")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	if role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Admin access required"})
+		return
+	}
+
+	var req updatePublicPageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	company, err := h.companyService.UpdatePublicPage(companyID, req.Slug, req.PublicName, req.Bio)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 

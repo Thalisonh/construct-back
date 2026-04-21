@@ -93,7 +93,7 @@ func (r *PostgresRepository) GetPublicProfile(username string) (*domain.PublicPr
 }
 
 func (r *PostgresRepository) UpdateProfile(user *domain.User) error {
-	return r.db.Model(user).Select("Name", "Email", "Phone", "CompanyID").Updates(user).Error
+	return r.db.Model(user).Select("Name", "Email", "Phone").Updates(user).Error
 }
 
 func (r *PostgresRepository) UpdatePassword(userID, password string) error {
@@ -282,6 +282,14 @@ func (r *PostgresRepository) CreateCompany(company *domain.Company) error {
 func (r *PostgresRepository) GetCompanyByID(id string) (*domain.Company, error) {
 	var company domain.Company
 	if err := r.db.Where("id = ?", id).First(&company).Error; err != nil {
+		return nil, err
+	}
+	return &company, nil
+}
+
+func (r *PostgresRepository) GetCompanyBySlug(slug string) (*domain.Company, error) {
+	var company domain.Company
+	if err := r.db.Where("slug = ?", slug).First(&company).Error; err != nil {
 		return nil, err
 	}
 	return &company, nil

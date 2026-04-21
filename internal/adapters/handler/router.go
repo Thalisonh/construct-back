@@ -33,7 +33,7 @@ func SetupRouter(
 	r.POST("/auth/google", authHandler.GoogleLogin)
 	r.POST("/signup/google", authHandler.GoogleLogin)
 	r.POST("/auth/verify", authHandler.TokenVerify)
-	r.GET("/public/profile/:username", userHandler.GetPublicProfile)
+	r.GET("/public/company/:slug", companyHandler.GetPublicPage)
 	r.GET("/public/projects/:id", projectHandler.GetPublicProject)
 	r.POST("/click/link/:id", linkHandler.TrackClick)
 	// Webhook do gateway de pagamento — sem autenticação JWT (validado por assinatura)
@@ -88,6 +88,7 @@ func SetupRouter(
 
 		api.GET("/company", companyHandler.GetCompany)
 		api.PUT("/company", companyHandler.UpdateCompany)
+		api.PUT("/company/public-page", companyHandler.UpdatePublicPage)
 		api.GET("/company/members", companyHandler.ListMembers)
 		api.POST("/company/members", companyHandler.AddMember)
 

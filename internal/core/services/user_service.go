@@ -95,13 +95,12 @@ func (s *UserService) GetProfile(userID string) (*domain.User, error) {
 	return s.userRepo.GetUserByID(userID)
 }
 
-func (s *UserService) UpdateProfile(userID, name, email, phone, companyID string) error {
+func (s *UserService) UpdateProfile(userID, name, email, phone string) error {
 	user := &domain.User{
-		ID:        userID,
-		Name:      name,
-		Email:     email,
-		Phone:     phone,
-		CompanyID: companyID,
+		ID:    userID,
+		Name:  name,
+		Email: email,
+		Phone: phone,
 	}
 
 	return s.userRepo.UpdateProfile(user)

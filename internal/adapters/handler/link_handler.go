@@ -25,8 +25,13 @@ type createLinkRequest struct {
 func (h *LinkHandler) CreateLink(c *gin.Context) {
 	userID := c.GetString("user_id")
 	companyID := c.GetString("company_id")
+	role := c.GetString("role")
 	if companyID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	if role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Admin access required"})
 		return
 	}
 
@@ -63,8 +68,13 @@ func (h *LinkHandler) ListLinks(c *gin.Context) {
 
 func (h *LinkHandler) DeleteLink(c *gin.Context) {
 	companyID := c.GetString("company_id")
+	role := c.GetString("role")
 	if companyID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	if role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Admin access required"})
 		return
 	}
 
@@ -89,8 +99,13 @@ func (h *LinkHandler) TrackClick(c *gin.Context) {
 
 func (h *LinkHandler) UpdateLink(c *gin.Context) {
 	companyID := c.GetString("company_id")
+	role := c.GetString("role")
 	if companyID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	if role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Admin access required"})
 		return
 	}
 

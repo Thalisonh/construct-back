@@ -65,7 +65,7 @@ func main() {
 	linkService := services.NewLinkService(linkRepo)
 	userService := services.NewUserService(userRepo, linkRepo)
 	clientService := services.NewClientService(clientRepo)
-	companyService := services.NewCompanyService(companyRepo)
+	companyService := services.NewCompanyService(companyRepo, linkRepo)
 	dashboardService := services.NewDashboardService(dashboardRepo)
 
 	// Payment Gateway (Mercado Pago Adapter — troque aqui para mudar de provider)
