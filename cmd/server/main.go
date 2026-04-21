@@ -27,11 +27,12 @@ func main() {
 	}
 
 	var (
-		userRepo    ports.UserRepository
-		projectRepo ports.ProjectRepository
-		linkRepo    ports.LinkRepository
-		companyRepo ports.CompanyRepository
-		subRepo     ports.SubscriptionRepository
+		userRepo      ports.UserRepository
+		projectRepo   ports.ProjectRepository
+		linkRepo      ports.LinkRepository
+		companyRepo   ports.CompanyRepository
+		subRepo       ports.SubscriptionRepository
+		dashboardRepo ports.DashboardRepository
 	)
 
 	dsn := os.Getenv("POSTGRES_DSN")
@@ -54,6 +55,7 @@ func main() {
 	linkRepo = pgRepo
 	companyRepo = pgRepo
 	subRepo = pgRepo
+	dashboardRepo = pgRepo
 	clientRepo := pgRepo
 	log.Println("Connected to PostgreSQL")
 
@@ -64,6 +66,7 @@ func main() {
 	userService := services.NewUserService(userRepo, linkRepo)
 	clientService := services.NewClientService(clientRepo)
 	companyService := services.NewCompanyService(companyRepo)
+	dashboardService := services.NewDashboardService(dashboardRepo)
 
 	// Payment Gateway (Mercado Pago Adapter — troque aqui para mudar de provider)
 	mpToken := os.Getenv("MP_ACCESS_TOKEN")
@@ -80,6 +83,7 @@ func main() {
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
+	dashboardHandler := handler.NewDashboardHandler(dashboardService)
 	projectHandler := handler.NewProjectHandler(projectService, subscriptionService)
 	linkHandler := handler.NewLinkHandler(linkService)
 	userHandler := handler.NewUserHandler(userService)
@@ -88,7 +92,7 @@ func main() {
 	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService)
 
 	// Router
-	r := handler.SetupRouter(authHandler, userHandler, projectHandler, linkHandler, clientHandler, companyHandler, subscriptionHandler, jwtSecret)
+	r := handler.SetupRouter(authHandler, userHandler, dashboardHandler, projectHandler, linkHandler, clientHandler, companyHandler, subscriptionHandler, jwtSecret)
 
 	log.Println("Server starting on :8080")
 	if err := r.Run(":8080"); err != nil {

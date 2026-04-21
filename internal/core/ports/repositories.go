@@ -67,3 +67,11 @@ type CompanyRepository interface {
 type SubscriptionRepository interface {
 	CountProjectsByCompany(companyID string) (int64, error)
 }
+
+type DashboardRepository interface {
+	CountProjectsInProgress(companyID string) (int64, error)
+	CountCompletedProjects(companyID string) (int64, error)
+	CountActiveTasks(companyID string) (int64, error)
+	CountLinkClicksByCompany(companyID string) (int64, error)
+	CountClientsByCompany(companyID string) (int64, error)
+}

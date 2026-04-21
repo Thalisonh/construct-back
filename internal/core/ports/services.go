@@ -64,3 +64,7 @@ type CompanyService interface {
 	GetCompany(id string) (*domain.Company, error)
 	UpdateCompany(id, name, email, phone, address string) (*domain.Company, error)
 }
+
+type DashboardService interface {
+	GetMetrics(companyID string) (*domain.DashboardMetrics, error)
+}

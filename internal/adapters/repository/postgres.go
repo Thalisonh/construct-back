@@ -308,3 +308,44 @@ func (r *PostgresRepository) CountProjectsByCompany(companyID string) (int64, er
 	err := r.db.Model(&domain.Project{}).Where("company_id = ?", companyID).Count(&count).Error
 	return count, err
 }
+
+func (r *PostgresRepository) CountProjectsInProgress(companyID string) (int64, error) {
+	var count int64
+	err := r.db.Model(&domain.Project{}).
+		Where("company_id = ? AND (status IS NULL OR status <> ?)", companyID, "Completed").
+		Count(&count).Error
+	return count, err
+}
+
+func (r *PostgresRepository) CountCompletedProjects(companyID string) (int64, error) {
+	var count int64
+	err := r.db.Model(&domain.Project{}).
+		Where("company_id = ? AND status = ?", companyID, "Completed").
+		Count(&count).Error
+	return count, err
+}
+
+func (r *PostgresRepository) CountActiveTasks(companyID string) (int64, error) {
+	var count int64
+	err := r.db.Model(&domain.Task{}).
+		Where("company_id = ? AND (status IS NULL OR status <> ?)", companyID, "Completed").
+		Count(&count).Error
+	return count, err
+}
+
+func (r *PostgresRepository) CountLinkClicksByCompany(companyID string) (int64, error) {
+	var count int64
+	err := r.db.Table("link_clicks").
+		Joins("JOIN links ON links.id = link_clicks.link_id").
+		Where("links.company_id = ?", companyID).
+		Count(&count).Error
+	return count, err
+}
+
+func (r *PostgresRepository) CountClientsByCompany(companyID string) (int64, error) {
+	var count int64
+	err := r.db.Model(&domain.Client{}).
+		Where("company_id = ?", companyID).
+		Count(&count).Error
+	return count, err
+}

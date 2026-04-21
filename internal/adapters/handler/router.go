@@ -13,6 +13,7 @@ import (
 func SetupRouter(
 	authHandler *AuthHandler,
 	userHandler *UserHandler,
+	dashboardHandler *DashboardHandler,
 	projectHandler *ProjectHandler,
 	linkHandler *LinkHandler,
 	clientHandler *ClientHandler,
@@ -52,6 +53,7 @@ func SetupRouter(
 		api.GET("/profile", userHandler.GetProfile)
 		api.PUT("/profile", userHandler.UpdateProfile)
 		api.PUT("/profile/password", userHandler.UpdatePassword)
+		api.GET("/dashboard/metrics", dashboardHandler.GetMetrics)
 
 		api.GET("/projects", projectHandler.ListProjects)
 		api.GET("/projects/:id", projectHandler.GetProject)
