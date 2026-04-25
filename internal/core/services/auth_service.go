@@ -52,11 +52,17 @@ func (s *AuthService) Signup(email, password, name, companyName, cnpj string) (s
 		return "", err
 	}
 
+	defaultSlug, err := GenerateDefaultCompanySlug(s.companyRepo, companyName)
+	if err != nil {
+		return "", err
+	}
+
 	// Create Company first
 	company := &domain.Company{
 		ID:        uuid.New().String(),
 		Name:      companyName,
 		CNPJ:      cnpj,
+		Slug:      defaultSlug,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Email:     email,
@@ -159,10 +165,16 @@ func (s *AuthService) CompleteGoogleCompanySetup(userID, companyName, cnpj, phon
 		return "", errors.New("company already configured")
 	}
 
+	defaultSlug, err := GenerateDefaultCompanySlug(s.companyRepo, companyName)
+	if err != nil {
+		return "", err
+	}
+
 	company := &domain.Company{
 		ID:        uuid.New().String(),
 		Name:      companyName,
 		CNPJ:      cnpj,
+		Slug:      defaultSlug,
 		Email:     user.Email,
 		Phone:     phone,
 		Address:   address,

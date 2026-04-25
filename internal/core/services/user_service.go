@@ -28,9 +28,15 @@ func NewUserService(userRepo ports.UserRepository, linkRepo ports.LinkRepository
 func Slugify(s string) string {
 	s = strings.ToLower(s)
 	s = strings.TrimSpace(s)
-	reg, _ := regexp.Compile("[^a-z0-9]+")
-	s = reg.ReplaceAllString(s, "-")
-	s = strings.Trim(s, "-")
+	whitespaceReg, _ := regexp.Compile("\\s+")
+	s = whitespaceReg.ReplaceAllString(s, "-")
+	invalidReg, _ := regexp.Compile("[^a-z0-9_-]+")
+	s = invalidReg.ReplaceAllString(s, "-")
+	hyphenReg, _ := regexp.Compile("-+")
+	s = hyphenReg.ReplaceAllString(s, "-")
+	underscoreReg, _ := regexp.Compile("_+")
+	s = underscoreReg.ReplaceAllString(s, "_")
+	s = strings.Trim(s, "-_")
 	return s
 }
 

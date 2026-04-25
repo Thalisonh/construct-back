@@ -399,6 +399,9 @@ func (r *PostgresRepository) UpdateBio(userID, bio string) error {
 // CompanyRepository Implementation
 
 func (r *PostgresRepository) CreateCompany(company *domain.Company) error {
+	if company.Slug == "" {
+		return r.db.Omit("Slug").Create(company).Error
+	}
 	return r.db.Create(company).Error
 }
 
@@ -419,6 +422,9 @@ func (r *PostgresRepository) GetCompanyBySlug(slug string) (*domain.Company, err
 }
 
 func (r *PostgresRepository) UpdateCompany(company *domain.Company) error {
+	if company.Slug == "" {
+		return r.db.Omit("Slug").Save(company).Error
+	}
 	return r.db.Save(company).Error
 }
 

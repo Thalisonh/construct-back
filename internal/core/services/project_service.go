@@ -4,6 +4,7 @@ import (
 	"construct-backend/internal/core/domain"
 	"construct-backend/internal/core/ports"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -57,8 +58,26 @@ func (s *ProjectService) GetProject(id, companyID string) (*domain.Project, erro
 	return s.projectRepo.GetProjectByID(id, companyID)
 }
 
-func (s *ProjectService) GetPublicProject(id string) (*domain.Project, error) {
-	return s.projectRepo.GetPublicProjectByID(id)
+func (s *ProjectService) GetPublicProject(id, pin string) (*domain.Project, error) {
+	project, err := s.projectRepo.GetPublicProjectByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := validatePublicProjectPin(project, pin); err != nil {
+		return nil, err
+	}
+
+	return project, nil
+}
+
+func (s *ProjectService) VerifyPublicProjectPin(id, pin string) error {
+	project, err := s.projectRepo.GetPublicProjectByID(id)
+	if err != nil {
+		return fmt.Errorf("invalid public project access")
+	}
+
+	return validatePublicProjectPin(project, pin)
 }
 
 func (s *ProjectService) UpdateProject(id, name, clientID, address, summary, startDate string, isPublic bool, companyID string) (*domain.Project, error) {
@@ -290,10 +309,14 @@ func (s *ProjectService) ListDiaryEntries(projectID, companyID string) ([]domain
 	return s.projectRepo.GetDiaryEntriesByProject(projectID, companyID)
 }
 
-func (s *ProjectService) ListPublicDiaryEntries(projectID string) ([]domain.DiaryEntry, error) {
-	_, err := s.projectRepo.GetPublicProjectByID(projectID)
+func (s *ProjectService) ListPublicDiaryEntries(projectID, pin string) ([]domain.DiaryEntry, error) {
+	project, err := s.projectRepo.GetPublicProjectByID(projectID)
 	if err != nil {
 		return nil, fmt.Errorf("project not found or not public")
+	}
+
+	if err := validatePublicProjectPin(project, pin); err != nil {
+		return nil, err
 	}
 
 	return s.projectRepo.GetPublicDiaryEntriesByProject(projectID)
@@ -347,4 +370,41 @@ func (s *ProjectService) DeleteDiaryEntry(entryID, projectID, companyID string) 
 	}
 
 	return s.projectRepo.DeleteDiaryEntry(entryID, projectID, companyID)
+}
+
+func validatePublicProjectPin(project *domain.Project, pin string) error {
+	if len(pin) != 4 {
+		return fmt.Errorf("invalid public project access")
+	}
+
+	for _, digit := range pin {
+		if digit < '0' || digit > '9' {
+			return fmt.Errorf("invalid public project access")
+		}
+	}
+
+	if project == nil || project.Client == nil {
+		return fmt.Errorf("invalid public project access")
+	}
+
+	digits := onlyDigits(project.Client.Phone)
+	if len(digits) < 4 {
+		return fmt.Errorf("invalid public project access")
+	}
+
+	if pin != digits[len(digits)-4:] {
+		return fmt.Errorf("invalid public project access")
+	}
+
+	return nil
+}
+
+func onlyDigits(value string) string {
+	var builder strings.Builder
+	for _, char := range value {
+		if char >= '0' && char <= '9' {
+			builder.WriteRune(char)
+		}
+	}
+	return builder.String()
 }

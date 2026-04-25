@@ -32,6 +32,12 @@ type createProjectRequest struct {
 	IsPublic  bool   `json:"is_public" binding:"required"`
 }
 
+type verifyPublicProjectPinRequest struct {
+	Pin string `json:"pin" binding:"required,len=4,numeric"`
+}
+
+const publicProjectPinHeader = "X-Project-Pin"
+
 func (h *ProjectHandler) CreateProject(c *gin.Context) {
 	userID := c.GetString("user_id")
 	companyID := c.GetString("company_id")
@@ -103,13 +109,30 @@ func (h *ProjectHandler) GetProject(c *gin.Context) {
 
 func (h *ProjectHandler) GetPublicProject(c *gin.Context) {
 	id := c.Param("id")
-	project, err := h.projectService.GetPublicProject(id)
+	pin := c.GetHeader(publicProjectPinHeader)
+	project, err := h.projectService.GetPublicProject(id, pin)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
 		return
 	}
 
 	c.JSON(http.StatusOK, project)
+}
+
+func (h *ProjectHandler) VerifyPublicProjectPin(c *gin.Context) {
+	id := c.Param("id")
+	var req verifyPublicProjectPinRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid pin"})
+		return
+	}
+
+	if err := h.projectService.VerifyPublicProjectPin(id, req.Pin); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid pin"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"valid": true})
 }
 
 func (h *ProjectHandler) UpdateProject(c *gin.Context) {
@@ -335,7 +358,8 @@ func (h *ProjectHandler) ListDiaryEntries(c *gin.Context) {
 
 func (h *ProjectHandler) ListPublicDiaryEntries(c *gin.Context) {
 	projectID := c.Param("id")
-	entries, err := h.projectService.ListPublicDiaryEntries(projectID)
+	pin := c.GetHeader(publicProjectPinHeader)
+	entries, err := h.projectService.ListPublicDiaryEntries(projectID, pin)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "diary not found"})
 		return

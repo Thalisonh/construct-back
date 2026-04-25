@@ -4,6 +4,7 @@ import (
 	"construct-backend/internal/core/domain"
 	"construct-backend/internal/core/ports"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,6 +24,11 @@ func NewCompanyService(companyRepo ports.CompanyRepository, linkRepo ports.LinkR
 }
 
 func (s *CompanyService) CreateCompany(name, cnpj, email, phone, address string) (*domain.Company, error) {
+	defaultSlug, err := GenerateDefaultCompanySlug(s.companyRepo, name)
+	if err != nil {
+		return nil, err
+	}
+
 	company := &domain.Company{
 		ID:         uuid.New().String(),
 		Name:       name,
@@ -30,12 +36,16 @@ func (s *CompanyService) CreateCompany(name, cnpj, email, phone, address string)
 		Email:      email,
 		Phone:      phone,
 		Address:    address,
+		Slug:       defaultSlug,
 		PublicName: name,
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
 	}
 
 	if err := s.companyRepo.CreateCompany(company); err != nil {
+		if isCompanySlugUniqueViolation(err) {
+			return nil, errors.New("slug already in use")
+		}
 		return nil, err
 	}
 
@@ -59,6 +69,9 @@ func (s *CompanyService) UpdateCompany(id, name, email, phone, address string) (
 	company.UpdatedAt = time.Now()
 
 	if err := s.companyRepo.UpdateCompany(company); err != nil {
+		if isCompanySlugUniqueViolation(err) {
+			return nil, errors.New("slug already in use")
+		}
 		return nil, err
 	}
 
@@ -90,6 +103,9 @@ func (s *CompanyService) UpdatePublicPage(companyID, slug, publicName, bio strin
 	company.UpdatedAt = time.Now()
 
 	if err := s.companyRepo.UpdateCompany(company); err != nil {
+		if isCompanySlugUniqueViolation(err) {
+			return nil, errors.New("slug already in use")
+		}
 		return nil, err
 	}
 
@@ -123,4 +139,14 @@ func (s *CompanyService) GetPublicPageBySlug(slug string) (*domain.PublicCompany
 		Avatar:     company.PublicAvatar,
 		Links:      links,
 	}, nil
+}
+
+func isCompanySlugUniqueViolation(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	errMsg := err.Error()
+	return strings.Contains(errMsg, "idx_companies_slug") ||
+		strings.Contains(errMsg, "companies_slug_key")
 }

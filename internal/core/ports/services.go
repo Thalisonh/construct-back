@@ -15,7 +15,8 @@ type ProjectService interface {
 	ListProjects(companyID string) ([]domain.Project, error)
 	ListProjectsByClient(clientID, companyID string) ([]domain.Project, error)
 	GetProject(id, companyID string) (*domain.Project, error)
-	GetPublicProject(id string) (*domain.Project, error)
+	GetPublicProject(id, pin string) (*domain.Project, error)
+	VerifyPublicProjectPin(id, pin string) error
 	UpdateProject(id, name, clientID, address, summary, startDate string, isPublic bool, companyID string) (*domain.Project, error)
 	DeleteProject(id, companyID string) error
 	AddTask(projectID, name, status, dueDate, companyID, userID string) (*domain.Task, error)
@@ -29,7 +30,7 @@ type ProjectService interface {
 	ListTasks(projectID string) ([]domain.Task, error)
 	CreateDiaryEntry(projectID, companyID, userID, entryDate, title string, items []domain.DiaryItem) (*domain.DiaryEntry, error)
 	ListDiaryEntries(projectID, companyID string) ([]domain.DiaryEntry, error)
-	ListPublicDiaryEntries(projectID string) ([]domain.DiaryEntry, error)
+	ListPublicDiaryEntries(projectID, pin string) ([]domain.DiaryEntry, error)
 	UpdateDiaryEntry(entryID, projectID, companyID, entryDate, title string, items []domain.DiaryItem) (*domain.DiaryEntry, error)
 	DeleteDiaryEntry(entryID, projectID, companyID string) error
 }

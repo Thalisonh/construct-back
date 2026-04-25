@@ -25,7 +25,7 @@ func SetupRouter(
 
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
-	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
+	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Project-Pin"}
 	r.Use(cors.New(config))
 
 	r.POST("/signup", authHandler.Signup)
@@ -34,6 +34,7 @@ func SetupRouter(
 	r.POST("/signup/google", authHandler.GoogleLogin)
 	r.POST("/auth/verify", authHandler.TokenVerify)
 	r.GET("/public/company/:slug", companyHandler.GetPublicPage)
+	r.POST("/public/projects/:id/verify-pin", projectHandler.VerifyPublicProjectPin)
 	r.GET("/public/projects/:id", projectHandler.GetPublicProject)
 	r.GET("/public/projects/:id/diary", projectHandler.ListPublicDiaryEntries)
 	r.POST("/click/link/:id", linkHandler.TrackClick)
