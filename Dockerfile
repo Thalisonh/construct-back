@@ -8,15 +8,11 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o main cmd/server/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bootstrap ./cmd/lambda
 
-# Run stage
-FROM alpine:latest
+# Lambda runtime image
+FROM public.ecr.aws/lambda/provided:al2023
 
-WORKDIR /app
+COPY --from=builder /app/bootstrap ${LAMBDA_RUNTIME_DIR}/bootstrap
 
-COPY --from=builder /app/main .
-
-EXPOSE 8080
-
-CMD ["./main"]
+CMD ["bootstrap"]
