@@ -3,7 +3,9 @@ package services
 import (
 	"construct-backend/internal/core/domain"
 	"construct-backend/internal/core/ports"
+	"context"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -12,11 +14,13 @@ import (
 
 type ProjectService struct {
 	projectRepo ports.ProjectRepository
+	documents   documentSupport
 }
 
-func NewProjectService(projectRepo ports.ProjectRepository) *ProjectService {
+func NewProjectService(projectRepo ports.ProjectRepository, storage ports.DocumentStorage) *ProjectService {
 	return &ProjectService{
 		projectRepo: projectRepo,
+		documents:   newDocumentSupport(storage),
 	}
 }
 
@@ -370,6 +374,71 @@ func (s *ProjectService) DeleteDiaryEntry(entryID, projectID, companyID string) 
 	}
 
 	return s.projectRepo.DeleteDiaryEntry(entryID, projectID, companyID)
+}
+
+func (s *ProjectService) UploadDiaryDocument(projectID, entryID, companyID, userID, fileName, contentType string, fileSize int64, body io.Reader) (*domain.DiaryDocument, error) {
+	if err := s.documents.ensureStorage(); err != nil {
+		return nil, err
+	}
+
+	if _, err := s.projectRepo.GetDiaryEntryByID(entryID, projectID, companyID); err != nil {
+		return nil, fmt.Errorf("diary entry not found")
+	}
+
+	now := time.Now()
+	sanitizedFileName := sanitizeDocumentFileName(fileName)
+	document := &domain.DiaryDocument{
+		ID:           uuid.NewString(),
+		ProjectID:    projectID,
+		DiaryEntryID: entryID,
+		CompanyID:    companyID,
+		FileName:     sanitizedFileName,
+		ContentType:  contentType,
+		FileSize:     fileSize,
+		StorageKey:   buildDiaryDocumentStorageKey(companyID, projectID, entryID, sanitizedFileName),
+		UploadedBy:   userID,
+		CreatedAt:    now,
+		UpdatedAt:    now,
+	}
+
+	if err := s.documents.storage.Upload(context.Background(), document.StorageKey, copyReader(body), contentType, fileSize); err != nil {
+		return nil, err
+	}
+
+	if err := s.projectRepo.CreateDiaryDocument(document); err != nil {
+		_ = s.documents.storage.Delete(context.Background(), document.StorageKey)
+		return nil, err
+	}
+
+	documents, err := s.documents.hydrateDiaryDocuments([]domain.DiaryDocument{*document})
+	if err != nil {
+		return nil, err
+	}
+	return &documents[0], nil
+}
+
+func (s *ProjectService) ListDiaryDocuments(projectID, entryID, companyID string) ([]domain.DiaryDocument, error) {
+	documents, err := s.projectRepo.GetDiaryDocuments(entryID, projectID, companyID)
+	if err != nil {
+		return nil, err
+	}
+	return s.documents.hydrateDiaryDocuments(documents)
+}
+
+func (s *ProjectService) DeleteDiaryDocument(projectID, entryID, documentID, companyID string) error {
+	document, err := s.projectRepo.GetDiaryDocumentByID(documentID, entryID, projectID, companyID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.projectRepo.DeleteDiaryDocument(documentID, entryID, projectID, companyID); err != nil {
+		return err
+	}
+
+	if err := s.documents.ensureStorage(); err != nil {
+		return err
+	}
+	return s.documents.storage.Delete(context.Background(), document.StorageKey)
 }
 
 func validatePublicProjectPin(project *domain.Project, pin string) error {

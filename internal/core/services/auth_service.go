@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -116,19 +117,31 @@ func (s *AuthService) Login(email, password string) (string, error) {
 
 func (s *AuthService) LoginWithGoogle(idToken string) (string, error) {
 	ctx := context.Background()
-	payload, err := idtoken.Validate(ctx, idToken, os.Getenv("AUDIENCE"))
+	audience := os.Getenv("AUDIENCE")
+	log.Printf("google login: validating token audience=%q token_length=%d", audience, len(idToken))
+	payload, err := idtoken.Validate(ctx, idToken, audience)
 	if err != nil {
+		log.Printf("google login: token validation failed audience=%q error=%v", audience, err)
 		return "", errors.New("invalid google token")
 	}
 
-	email := payload.Claims["email"].(string)
+	email, _ := payload.Claims["email"].(string)
+	name, _ := payload.Claims["name"].(string)
+	log.Printf("google login: token validated email=%q name=%q subject=%v", email, name, payload.Subject)
+
+	if email == "" {
+		log.Printf("google login: validated token missing email claim")
+		return "", errors.New("invalid google token")
+	}
+
 	user, err := s.userRepo.GetUserByEmail(email)
 	if !errors.Is(err, gorm.ErrRecordNotFound) && err != nil {
+		log.Printf("google login: repository error fetching user by email=%q: %v", email, err)
 		return "", err
 	}
 
 	if user == nil {
-		name, _ := payload.Claims["name"].(string)
+		log.Printf("google login: user not found for email=%q, creating new user", email)
 
 		// Create new user if not exists — role padrão "member" evita JWT com campos vazios
 		user = &domain.User{
@@ -143,15 +156,19 @@ func (s *AuthService) LoginWithGoogle(idToken string) (string, error) {
 			user.Username = Slugify(user.Name)
 		}
 		if err := s.userRepo.CreateUser(user); err != nil {
+			log.Printf("google login: failed creating user email=%q: %v", email, err)
 			return "", err
 		}
+		log.Printf("google login: created new user id=%q email=%q", user.ID, email)
 	}
 
 	tokenString, err := s.buildToken(user)
 	if err != nil {
+		log.Printf("google login: failed building jwt for user_id=%q: %v", user.ID, err)
 		return "", err
 	}
 
+	log.Printf("google login: jwt issued for user_id=%q company_id=%q", user.ID, user.CompanyID)
 	return tokenString, nil
 }
 

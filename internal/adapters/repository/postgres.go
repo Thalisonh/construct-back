@@ -388,12 +388,60 @@ func (r *PostgresRepository) AddComment(comment *domain.Comment) error {
 	return r.db.Create(comment).Error
 }
 
+func (r *PostgresRepository) CreateClientDocument(document *domain.ClientDocument) error {
+	return r.db.Create(document).Error
+}
+
+func (r *PostgresRepository) GetClientDocuments(clientID, companyID string) ([]domain.ClientDocument, error) {
+	var documents []domain.ClientDocument
+	err := r.db.Where("client_id = ? AND company_id = ?", clientID, companyID).
+		Order("created_at DESC").
+		Find(&documents).Error
+	return documents, err
+}
+
+func (r *PostgresRepository) GetClientDocumentByID(id, clientID, companyID string) (*domain.ClientDocument, error) {
+	var document domain.ClientDocument
+	if err := r.db.Where("id = ? AND client_id = ? AND company_id = ?", id, clientID, companyID).First(&document).Error; err != nil {
+		return nil, err
+	}
+	return &document, nil
+}
+
+func (r *PostgresRepository) DeleteClientDocument(id, clientID, companyID string) error {
+	return r.db.Delete(&domain.ClientDocument{}, "id = ? AND client_id = ? AND company_id = ?", id, clientID, companyID).Error
+}
+
 func (r *PostgresRepository) UpdateSubtaskByTaskID(taskID string) error {
 	return r.db.Model(&domain.Subtask{}).Where("task_id = ?", taskID).Update("status", "Completed").Error
 }
 
 func (r *PostgresRepository) UpdateBio(userID, bio string) error {
 	return r.db.Model(&domain.User{}).Where("id = ?", userID).Update("bio", bio).Error
+}
+
+func (r *PostgresRepository) CreateDiaryDocument(document *domain.DiaryDocument) error {
+	return r.db.Create(document).Error
+}
+
+func (r *PostgresRepository) GetDiaryDocuments(entryID, projectID, companyID string) ([]domain.DiaryDocument, error) {
+	var documents []domain.DiaryDocument
+	err := r.db.Where("diary_entry_id = ? AND project_id = ? AND company_id = ?", entryID, projectID, companyID).
+		Order("created_at DESC").
+		Find(&documents).Error
+	return documents, err
+}
+
+func (r *PostgresRepository) GetDiaryDocumentByID(id, entryID, projectID, companyID string) (*domain.DiaryDocument, error) {
+	var document domain.DiaryDocument
+	if err := r.db.Where("id = ? AND diary_entry_id = ? AND project_id = ? AND company_id = ?", id, entryID, projectID, companyID).First(&document).Error; err != nil {
+		return nil, err
+	}
+	return &document, nil
+}
+
+func (r *PostgresRepository) DeleteDiaryDocument(id, entryID, projectID, companyID string) error {
+	return r.db.Delete(&domain.DiaryDocument{}, "id = ? AND diary_entry_id = ? AND project_id = ? AND company_id = ?", id, entryID, projectID, companyID).Error
 }
 
 // CompanyRepository Implementation

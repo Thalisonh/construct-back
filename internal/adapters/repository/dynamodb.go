@@ -20,16 +20,18 @@ import (
 )
 
 const (
-	entityCompany    = "company"
-	entityUser       = "user"
-	entityClient     = "client"
-	entityComment    = "comment"
-	entityProject    = "project"
-	entityTask       = "task"
-	entitySubtask    = "subtask"
-	entityDiaryEntry = "diary_entry"
-	entityLink       = "link"
-	entityLinkClick  = "link_click"
+	entityCompany        = "company"
+	entityUser           = "user"
+	entityClient         = "client"
+	entityComment        = "comment"
+	entityProject        = "project"
+	entityTask           = "task"
+	entitySubtask        = "subtask"
+	entityDiaryEntry     = "diary_entry"
+	entityDiaryDocument  = "diary_document"
+	entityLink           = "link"
+	entityLinkClick      = "link_click"
+	entityClientDocument = "client_document"
 )
 
 type DynamoRepository struct {
@@ -59,16 +61,18 @@ type dynamoItem struct {
 	CreatedAt  string `dynamodbav:"created_at,omitempty"`
 	EntryDate  string `dynamodbav:"entry_date,omitempty"`
 
-	User       *domain.User       `dynamodbav:"user,omitempty"`
-	Company    *domain.Company    `dynamodbav:"company,omitempty"`
-	Client     *domain.Client     `dynamodbav:"client,omitempty"`
-	Comment    *domain.Comment    `dynamodbav:"comment,omitempty"`
-	Project    *domain.Project    `dynamodbav:"project,omitempty"`
-	Task       *domain.Task       `dynamodbav:"task,omitempty"`
-	Subtask    *domain.Subtask    `dynamodbav:"subtask,omitempty"`
-	DiaryEntry *domain.DiaryEntry `dynamodbav:"diary_entry,omitempty"`
-	Link       *domain.Link       `dynamodbav:"link,omitempty"`
-	LinkClick  *domain.LinkClick  `dynamodbav:"link_click,omitempty"`
+	User           *domain.User           `dynamodbav:"user,omitempty"`
+	Company        *domain.Company        `dynamodbav:"company,omitempty"`
+	Client         *domain.Client         `dynamodbav:"client,omitempty"`
+	Comment        *domain.Comment        `dynamodbav:"comment,omitempty"`
+	Project        *domain.Project        `dynamodbav:"project,omitempty"`
+	Task           *domain.Task           `dynamodbav:"task,omitempty"`
+	Subtask        *domain.Subtask        `dynamodbav:"subtask,omitempty"`
+	DiaryEntry     *domain.DiaryEntry     `dynamodbav:"diary_entry,omitempty"`
+	DiaryDocument  *domain.DiaryDocument  `dynamodbav:"diary_document,omitempty"`
+	ClientDocument *domain.ClientDocument `dynamodbav:"client_document,omitempty"`
+	Link           *domain.Link           `dynamodbav:"link,omitempty"`
+	LinkClick      *domain.LinkClick      `dynamodbav:"link_click,omitempty"`
 }
 
 func NewDynamoRepository(ctx context.Context, tableName string) (*DynamoRepository, error) {
@@ -491,6 +495,60 @@ func (r *DynamoRepository) AddComment(comment *domain.Comment) error {
 	return r.putItem(context.Background(), item)
 }
 
+func (r *DynamoRepository) CreateClientDocument(document *domain.ClientDocument) error {
+	item := dynamoItem{
+		PK:             clientPK(document.ClientID),
+		SK:             clientDocumentSK(document.ID),
+		GSI1PK:         companyPK(document.CompanyID),
+		GSI1SK:         clientDocumentSK(document.ID),
+		EntityType:     entityClientDocument,
+		ID:             document.ID,
+		CompanyID:      document.CompanyID,
+		ClientID:       document.ClientID,
+		UserID:         document.UploadedBy,
+		CreatedAt:      timeKey(document.CreatedAt),
+		ClientDocument: document,
+	}
+	return r.putItem(context.Background(), item)
+}
+
+func (r *DynamoRepository) GetClientDocuments(clientID, companyID string) ([]domain.ClientDocument, error) {
+	items, err := r.query(context.Background(),
+		expression.Key("PK").Equal(expression.Value(clientPK(clientID))).And(expression.Key("SK").BeginsWith(clientDocumentPrefix())),
+	)
+	if err != nil {
+		return nil, err
+	}
+	documents := make([]domain.ClientDocument, 0, len(items))
+	for _, item := range items {
+		if item.ClientDocument != nil && item.ClientDocument.CompanyID == companyID {
+			documents = append(documents, *item.ClientDocument)
+		}
+	}
+	sort.Slice(documents, func(i, j int) bool {
+		return documents[i].CreatedAt.After(documents[j].CreatedAt)
+	})
+	return documents, nil
+}
+
+func (r *DynamoRepository) GetClientDocumentByID(id, clientID, companyID string) (*domain.ClientDocument, error) {
+	item, err := r.getItem(context.Background(), clientPK(clientID), clientDocumentSK(id))
+	if err != nil {
+		return nil, err
+	}
+	if item.ClientDocument == nil || item.ClientDocument.CompanyID != companyID {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return item.ClientDocument, nil
+}
+
+func (r *DynamoRepository) DeleteClientDocument(id, clientID, companyID string) error {
+	if _, err := r.GetClientDocumentByID(id, clientID, companyID); err != nil {
+		return err
+	}
+	return r.deleteItem(context.Background(), clientPK(clientID), clientDocumentSK(id))
+}
+
 func (r *DynamoRepository) commentsByClient(clientID string) ([]domain.Comment, error) {
 	items, err := r.query(context.Background(),
 		expression.Key("PK").Equal(expression.Value(clientPK(clientID))).And(expression.Key("SK").BeginsWith(commentSKPrefix())),
@@ -801,6 +859,60 @@ func (r *DynamoRepository) DeleteDiaryEntry(id, projectID, companyID string) err
 		return err
 	}
 	return r.deleteItem(context.Background(), projectPK(projectID), diarySK(entry.EntryDate, entry.ID))
+}
+
+func (r *DynamoRepository) CreateDiaryDocument(document *domain.DiaryDocument) error {
+	item := dynamoItem{
+		PK:            projectPK(document.ProjectID),
+		SK:            diaryDocumentSK(document.DiaryEntryID, document.ID),
+		GSI1PK:        companyPK(document.CompanyID),
+		GSI1SK:        diaryDocumentSK(document.DiaryEntryID, document.ID),
+		EntityType:    entityDiaryDocument,
+		ID:            document.ID,
+		CompanyID:     document.CompanyID,
+		UserID:        document.UploadedBy,
+		ProjectID:     document.ProjectID,
+		DiaryDocument: document,
+		CreatedAt:     timeKey(document.CreatedAt),
+	}
+	return r.putItem(context.Background(), item)
+}
+
+func (r *DynamoRepository) GetDiaryDocuments(entryID, projectID, companyID string) ([]domain.DiaryDocument, error) {
+	items, err := r.query(context.Background(),
+		expression.Key("PK").Equal(expression.Value(projectPK(projectID))).And(expression.Key("SK").BeginsWith(diaryDocumentPrefix(entryID))),
+	)
+	if err != nil {
+		return nil, err
+	}
+	documents := make([]domain.DiaryDocument, 0, len(items))
+	for _, item := range items {
+		if item.DiaryDocument != nil && item.DiaryDocument.CompanyID == companyID {
+			documents = append(documents, *item.DiaryDocument)
+		}
+	}
+	sort.Slice(documents, func(i, j int) bool {
+		return documents[i].CreatedAt.After(documents[j].CreatedAt)
+	})
+	return documents, nil
+}
+
+func (r *DynamoRepository) GetDiaryDocumentByID(id, entryID, projectID, companyID string) (*domain.DiaryDocument, error) {
+	item, err := r.getItem(context.Background(), projectPK(projectID), diaryDocumentSK(entryID, id))
+	if err != nil {
+		return nil, err
+	}
+	if item.DiaryDocument == nil || item.DiaryDocument.CompanyID != companyID {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return item.DiaryDocument, nil
+}
+
+func (r *DynamoRepository) DeleteDiaryDocument(id, entryID, projectID, companyID string) error {
+	if _, err := r.GetDiaryDocumentByID(id, entryID, projectID, companyID); err != nil {
+		return err
+	}
+	return r.deleteItem(context.Background(), projectPK(projectID), diaryDocumentSK(entryID, id))
 }
 
 func (r *DynamoRepository) enrichProject(project domain.Project) (*domain.Project, error) {
@@ -1137,6 +1249,22 @@ func diarySKPrefix() string {
 
 func diarySK(entryDate time.Time, id string) string {
 	return diarySKPrefix() + dayKey(entryDate) + "#" + id
+}
+
+func clientDocumentPrefix() string {
+	return "CLIENT_DOCUMENT#"
+}
+
+func clientDocumentSK(id string) string {
+	return clientDocumentPrefix() + id
+}
+
+func diaryDocumentPrefix(entryID string) string {
+	return "DIARY_DOCUMENT#" + entryID + "#"
+}
+
+func diaryDocumentSK(entryID, id string) string {
+	return diaryDocumentPrefix(entryID) + id
 }
 
 func clickSKPrefix() string {
