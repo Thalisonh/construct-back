@@ -25,7 +25,7 @@ func SetupRouter(
 
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
-	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Project-Pin"}
+	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "X-Project-Pin", "x-project-pin"}
 	r.Use(cors.New(config))
 
 	r.POST("/signup", authHandler.Signup)
