@@ -44,6 +44,10 @@ type ProjectRepository interface {
 	GetDiaryEntryByID(id, projectID, companyID string) (*domain.DiaryEntry, error)
 	UpdateDiaryEntry(entry *domain.DiaryEntry) error
 	DeleteDiaryEntry(id, projectID, companyID string) error
+	CreateDiaryDocument(document *domain.DiaryDocument) error
+	GetDiaryDocuments(entryID, projectID, companyID string) ([]domain.DiaryDocument, error)
+	GetDiaryDocumentByID(id, entryID, projectID, companyID string) (*domain.DiaryDocument, error)
+	DeleteDiaryDocument(id, entryID, projectID, companyID string) error
 }
 
 type LinkRepository interface {
@@ -62,6 +66,10 @@ type ClientRepository interface {
 	UpdateClient(client *domain.Client) error
 	DeleteClient(id, companyID string) error
 	AddComment(comment *domain.Comment) error
+	CreateClientDocument(document *domain.ClientDocument) error
+	GetClientDocuments(clientID, companyID string) ([]domain.ClientDocument, error)
+	GetClientDocumentByID(id, clientID, companyID string) (*domain.ClientDocument, error)
+	DeleteClientDocument(id, clientID, companyID string) error
 }
 
 type CompanyRepository interface {

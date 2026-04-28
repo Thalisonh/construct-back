@@ -424,6 +424,80 @@ func (h *ProjectHandler) DeleteDiaryEntry(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (h *ProjectHandler) UploadDiaryDocument(c *gin.Context) {
+	companyID := c.GetString("company_id")
+	userID := c.GetString("user_id")
+	if companyID == "" || userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	projectID := c.Param("id")
+	entryID := c.Param("entryId")
+	header, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
+		return
+	}
+
+	file, err := header.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "could not open uploaded file"})
+		return
+	}
+	defer file.Close()
+
+	contentType, err := validateDocumentUpload(header, file)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	document, err := h.projectService.UploadDiaryDocument(projectID, entryID, companyID, userID, header.Filename, contentType, header.Size, file)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, document)
+}
+
+func (h *ProjectHandler) ListDiaryDocuments(c *gin.Context) {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	projectID := c.Param("id")
+	entryID := c.Param("entryId")
+	documents, err := h.projectService.ListDiaryDocuments(projectID, entryID, companyID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, documents)
+}
+
+func (h *ProjectHandler) DeleteDiaryDocument(c *gin.Context) {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	projectID := c.Param("id")
+	entryID := c.Param("entryId")
+	documentID := c.Param("documentId")
+	if err := h.projectService.DeleteDiaryDocument(projectID, entryID, documentID, companyID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 func (h *ProjectHandler) UpdateSubtask(c *gin.Context) {
 	companyID := c.GetString("company_id")
 	if companyID == "" {

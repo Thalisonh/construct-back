@@ -4,6 +4,7 @@ import (
 	"construct-backend/internal/adapters/handler"
 	"construct-backend/internal/adapters/payment"
 	"construct-backend/internal/adapters/repository"
+	"construct-backend/internal/adapters/storage"
 	"construct-backend/internal/core/domain"
 	"construct-backend/internal/core/ports"
 	"construct-backend/internal/core/services"
@@ -26,14 +27,22 @@ func NewRouter() (*gin.Engine, error) {
 	}
 
 	var (
-		userRepo      ports.UserRepository
-		projectRepo   ports.ProjectRepository
-		linkRepo      ports.LinkRepository
-		companyRepo   ports.CompanyRepository
-		subRepo       ports.SubscriptionRepository
-		dashboardRepo ports.DashboardRepository
-		clientRepo    ports.ClientRepository
+		userRepo        ports.UserRepository
+		projectRepo     ports.ProjectRepository
+		linkRepo        ports.LinkRepository
+		companyRepo     ports.CompanyRepository
+		subRepo         ports.SubscriptionRepository
+		dashboardRepo   ports.DashboardRepository
+		clientRepo      ports.ClientRepository
+		documentStorage ports.DocumentStorage
 	)
+
+	s3Storage, err := storage.NewS3DocumentStorageFromEnv(context.Background())
+	if err != nil {
+		log.Printf("document storage disabled: %v", err)
+	} else {
+		documentStorage = s3Storage
+	}
 
 	repositoryDriver := os.Getenv("REPOSITORY_DRIVER")
 	if repositoryDriver == "" {
@@ -72,10 +81,10 @@ func NewRouter() (*gin.Engine, error) {
 	}
 
 	authService := services.NewAuthService(userRepo, companyRepo, jwtSecret)
-	projectService := services.NewProjectService(projectRepo)
+	projectService := services.NewProjectService(projectRepo, documentStorage)
 	linkService := services.NewLinkService(linkRepo)
 	userService := services.NewUserService(userRepo, linkRepo)
-	clientService := services.NewClientService(clientRepo)
+	clientService := services.NewClientService(clientRepo, documentStorage)
 	companyService := services.NewCompanyService(companyRepo, linkRepo)
 	dashboardService := services.NewDashboardService(dashboardRepo)
 
@@ -118,7 +127,7 @@ func newPostgresRepository() (*repository.PostgresRepository, error) {
 	}
 
 	if os.Getenv("AUTO_MIGRATE") == "true" {
-		if err := db.AutoMigrate(&domain.User{}, &domain.Project{}, &domain.Link{}, &domain.Client{}, &domain.Comment{}, &domain.Task{}, &domain.Subtask{}, &domain.LinkClick{}, &domain.Company{}, &domain.DiaryEntry{}, &domain.DiaryItem{}); err != nil {
+		if err := db.AutoMigrate(&domain.User{}, &domain.Project{}, &domain.Link{}, &domain.Client{}, &domain.Comment{}, &domain.Task{}, &domain.Subtask{}, &domain.LinkClick{}, &domain.Company{}, &domain.DiaryEntry{}, &domain.DiaryItem{}, &domain.ClientDocument{}, &domain.DiaryDocument{}); err != nil {
 			return nil, fmt.Errorf("auto migrate Postgres: %w", err)
 		}
 		log.Println("Postgres auto migration completed")

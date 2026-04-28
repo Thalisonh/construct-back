@@ -1,6 +1,9 @@
 package ports
 
-import "construct-backend/internal/core/domain"
+import (
+	"construct-backend/internal/core/domain"
+	"io"
+)
 
 type AuthService interface {
 	Signup(email, password, name, companyName, cnpj string) (string, error)
@@ -33,6 +36,9 @@ type ProjectService interface {
 	ListPublicDiaryEntries(projectID, pin string) ([]domain.DiaryEntry, error)
 	UpdateDiaryEntry(entryID, projectID, companyID, entryDate, title string, items []domain.DiaryItem) (*domain.DiaryEntry, error)
 	DeleteDiaryEntry(entryID, projectID, companyID string) error
+	UploadDiaryDocument(projectID, entryID, companyID, userID, fileName, contentType string, fileSize int64, body io.Reader) (*domain.DiaryDocument, error)
+	ListDiaryDocuments(projectID, entryID, companyID string) ([]domain.DiaryDocument, error)
+	DeleteDiaryDocument(projectID, entryID, documentID, companyID string) error
 }
 
 type LinkService interface {
@@ -64,6 +70,9 @@ type ClientService interface {
 	UpdateClient(id, name, phone, address, summary, companyID string) (*domain.Client, error)
 	DeleteClient(id, companyID string) error
 	AddComment(clientID, content string) (*domain.Comment, error)
+	UploadClientDocument(clientID, companyID, userID, fileName, contentType string, fileSize int64, body io.Reader) (*domain.ClientDocument, error)
+	ListClientDocuments(clientID, companyID string) ([]domain.ClientDocument, error)
+	DeleteClientDocument(clientID, documentID, companyID string) error
 }
 
 type CompanyService interface {
