@@ -2,4 +2,4 @@
 .env
 .exe
 server.exe
-.local.yaml
+*.local.yaml

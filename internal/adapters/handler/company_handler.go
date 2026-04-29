@@ -46,6 +46,7 @@ type updatePublicPageRequest struct {
 	Slug       string `json:"slug" binding:"required"`
 	PublicName string `json:"public_name" binding:"required"`
 	Bio        string `json:"bio"`
+	Theme      string `json:"theme"`
 }
 
 func (h *CompanyHandler) UpdateCompany(c *gin.Context) {
@@ -115,7 +116,44 @@ func (h *CompanyHandler) UpdatePublicPage(c *gin.Context) {
 		return
 	}
 
-	company, err := h.companyService.UpdatePublicPage(companyID, req.Slug, req.PublicName, req.Bio)
+	company, err := h.companyService.UpdatePublicPage(companyID, req.Slug, req.PublicName, req.Bio, req.Theme)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, company)
+}
+
+func (h *CompanyHandler) UploadLogo(c *gin.Context) {
+	companyID := c.GetString("company_id")
+	role := c.GetString("role")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	if role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden: Admin access required"})
+		return
+	}
+
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
+		return
+	}
+	defer file.Close()
+
+	buffer := make([]byte, 512)
+	bytesRead, _ := file.Read(buffer)
+	if _, err := file.Seek(0, 0); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "could not read file"})
+		return
+	}
+
+	contentType := http.DetectContentType(buffer[:bytesRead])
+	company, err := h.companyService.UploadCompanyLogo(companyID, header.Filename, contentType, header.Size, file)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

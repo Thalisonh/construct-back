@@ -79,7 +79,8 @@ type CompanyService interface {
 	CreateCompany(name, cnpj, email, phone, address string) (*domain.Company, error)
 	GetCompany(id string) (*domain.Company, error)
 	UpdateCompany(id, name, email, phone, address string) (*domain.Company, error)
-	UpdatePublicPage(companyID, slug, publicName, bio string) (*domain.Company, error)
+	UpdatePublicPage(companyID, slug, publicName, bio, theme string) (*domain.Company, error)
+	UploadCompanyLogo(companyID, fileName, contentType string, fileSize int64, body io.Reader) (*domain.Company, error)
 	GetPublicPageBySlug(slug string) (*domain.PublicCompanyProfile, error)
 }
 

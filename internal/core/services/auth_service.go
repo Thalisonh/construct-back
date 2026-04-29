@@ -60,13 +60,15 @@ func (s *AuthService) Signup(email, password, name, companyName, cnpj string) (s
 
 	// Create Company first
 	company := &domain.Company{
-		ID:        uuid.New().String(),
-		Name:      companyName,
-		CNPJ:      cnpj,
-		Slug:      defaultSlug,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		Email:     email,
+		ID:          uuid.New().String(),
+		Name:        companyName,
+		CNPJ:        cnpj,
+		Slug:        defaultSlug,
+		PublicName:  companyName,
+		PublicTheme: DefaultPublicTheme,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+		Email:       email,
 	}
 
 	if err := s.companyRepo.CreateCompany(company); err != nil {
@@ -188,15 +190,17 @@ func (s *AuthService) CompleteGoogleCompanySetup(userID, companyName, cnpj, phon
 	}
 
 	company := &domain.Company{
-		ID:        uuid.New().String(),
-		Name:      companyName,
-		CNPJ:      cnpj,
-		Slug:      defaultSlug,
-		Email:     user.Email,
-		Phone:     phone,
-		Address:   address,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:          uuid.New().String(),
+		Name:        companyName,
+		CNPJ:        cnpj,
+		Slug:        defaultSlug,
+		PublicName:  companyName,
+		PublicTheme: DefaultPublicTheme,
+		Email:       user.Email,
+		Phone:       phone,
+		Address:     address,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	if err := s.companyRepo.CreateCompany(company); err != nil {

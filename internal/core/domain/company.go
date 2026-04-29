@@ -15,6 +15,7 @@ type Company struct {
 	PublicName   string `json:"public_name" datastore:"public_name"`
 	PublicBio    string `json:"public_bio" datastore:"public_bio"`
 	PublicAvatar string `json:"public_avatar" datastore:"public_avatar"`
+	PublicTheme  string `json:"public_theme" datastore:"public_theme" gorm:"default:minimal"`
 	// Subscription fields
 	Plan           string     `json:"plan" gorm:"default:free"`          // free | pro | enterprise
 	PlanStatus     string     `json:"plan_status" gorm:"default:active"` // active | inactive
@@ -30,5 +31,6 @@ type PublicCompanyProfile struct {
 	PublicName string `json:"public_name"`
 	Bio        string `json:"bio"`
 	Avatar     string `json:"avatar"`
+	Theme      string `json:"theme"`
 	Links      []Link `json:"links"`
 }

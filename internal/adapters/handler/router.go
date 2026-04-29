@@ -102,6 +102,7 @@ func SetupRouter(
 		api.GET("/company", companyHandler.GetCompany)
 		api.PUT("/company", companyHandler.UpdateCompany)
 		api.PUT("/company/public-page", companyHandler.UpdatePublicPage)
+		api.POST("/company/logo", companyHandler.UploadLogo)
 		api.GET("/company/members", companyHandler.ListMembers)
 		api.POST("/company/members", companyHandler.AddMember)
 

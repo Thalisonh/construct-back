@@ -85,7 +85,7 @@ func NewRouter() (*gin.Engine, error) {
 	linkService := services.NewLinkService(linkRepo)
 	userService := services.NewUserService(userRepo, linkRepo)
 	clientService := services.NewClientService(clientRepo, documentStorage)
-	companyService := services.NewCompanyService(companyRepo, linkRepo)
+	companyService := services.NewCompanyService(companyRepo, linkRepo, documentStorage)
 	dashboardService := services.NewDashboardService(dashboardRepo)
 
 	mpToken := os.Getenv("MP_ACCESS_TOKEN")
