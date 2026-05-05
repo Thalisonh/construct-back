@@ -34,6 +34,7 @@ func NewRouter() (*gin.Engine, error) {
 		subRepo         ports.SubscriptionRepository
 		dashboardRepo   ports.DashboardRepository
 		clientRepo      ports.ClientRepository
+		quoteRepo       ports.QuoteRepository
 		documentStorage ports.DocumentStorage
 	)
 
@@ -63,6 +64,7 @@ func NewRouter() (*gin.Engine, error) {
 		subRepo = pgRepo
 		dashboardRepo = pgRepo
 		clientRepo = pgRepo
+		quoteRepo = pgRepo
 	case "dynamodb":
 		dynamoRepo, err := repository.NewDynamoRepositoryFromEnv(context.Background())
 		if err != nil {
@@ -76,6 +78,7 @@ func NewRouter() (*gin.Engine, error) {
 		subRepo = dynamoRepo
 		dashboardRepo = dynamoRepo
 		clientRepo = dynamoRepo
+		quoteRepo = dynamoRepo
 	default:
 		return nil, fmt.Errorf("unsupported repository driver %q", repositoryDriver)
 	}
@@ -85,6 +88,7 @@ func NewRouter() (*gin.Engine, error) {
 	linkService := services.NewLinkService(linkRepo)
 	userService := services.NewUserService(userRepo, linkRepo)
 	clientService := services.NewClientService(clientRepo, documentStorage)
+	quoteService := services.NewQuoteService(quoteRepo, clientRepo, companyRepo)
 	companyService := services.NewCompanyService(companyRepo, linkRepo, documentStorage)
 	dashboardService := services.NewDashboardService(dashboardRepo)
 
@@ -107,10 +111,11 @@ func NewRouter() (*gin.Engine, error) {
 	linkHandler := handler.NewLinkHandler(linkService)
 	userHandler := handler.NewUserHandler(userService)
 	clientHandler := handler.NewClientHandler(clientService)
+	quoteHandler := handler.NewQuoteHandler(quoteService)
 	companyHandler := handler.NewCompanyHandler(companyService, userService)
 	subscriptionHandler := handler.NewSubscriptionHandler(subscriptionService)
 
-	return handler.SetupRouter(authHandler, userHandler, dashboardHandler, projectHandler, linkHandler, clientHandler, companyHandler, subscriptionHandler, jwtSecret), nil
+	return handler.SetupRouter(authHandler, userHandler, dashboardHandler, projectHandler, linkHandler, clientHandler, quoteHandler, companyHandler, subscriptionHandler, jwtSecret), nil
 }
 
 func newPostgresRepository() (*repository.PostgresRepository, error) {
@@ -127,7 +132,7 @@ func newPostgresRepository() (*repository.PostgresRepository, error) {
 	}
 
 	if os.Getenv("AUTO_MIGRATE") == "true" {
-		if err := db.AutoMigrate(&domain.User{}, &domain.Project{}, &domain.Link{}, &domain.Client{}, &domain.Comment{}, &domain.Task{}, &domain.Subtask{}, &domain.LinkClick{}, &domain.Company{}, &domain.DiaryEntry{}, &domain.DiaryItem{}, &domain.ClientDocument{}, &domain.DiaryDocument{}); err != nil {
+		if err := db.AutoMigrate(&domain.User{}, &domain.Project{}, &domain.Link{}, &domain.Client{}, &domain.Comment{}, &domain.Task{}, &domain.Subtask{}, &domain.LinkClick{}, &domain.Company{}, &domain.DiaryEntry{}, &domain.DiaryItem{}, &domain.ClientDocument{}, &domain.DiaryDocument{}, &domain.Quote{}, &domain.QuoteItem{}); err != nil {
 			return nil, fmt.Errorf("auto migrate Postgres: %w", err)
 		}
 		log.Println("Postgres auto migration completed")

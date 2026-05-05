@@ -32,6 +32,7 @@ const (
 	entityLink           = "link"
 	entityLinkClick      = "link_click"
 	entityClientDocument = "client_document"
+	entityQuote          = "quote"
 )
 
 type DynamoRepository struct {
@@ -73,6 +74,7 @@ type dynamoItem struct {
 	ClientDocument *domain.ClientDocument `dynamodbav:"client_document,omitempty"`
 	Link           *domain.Link           `dynamodbav:"link,omitempty"`
 	LinkClick      *domain.LinkClick      `dynamodbav:"link_click,omitempty"`
+	Quote          *domain.Quote          `dynamodbav:"quote,omitempty"`
 }
 
 func NewDynamoRepository(ctx context.Context, tableName string) (*DynamoRepository, error) {
@@ -547,6 +549,78 @@ func (r *DynamoRepository) DeleteClientDocument(id, clientID, companyID string) 
 		return err
 	}
 	return r.deleteItem(context.Background(), clientPK(clientID), clientDocumentSK(id))
+}
+
+// QuoteRepository
+
+func (r *DynamoRepository) CreateQuote(quote *domain.Quote) error {
+	item := dynamoItem{
+		PK:         companyPK(quote.CompanyID),
+		SK:         quoteSK(quote.ID),
+		EntityType: entityQuote,
+		ID:         quote.ID,
+		CompanyID:  quote.CompanyID,
+		ClientID:   quote.ClientID,
+		UserID:     quote.CreatedBy,
+		Status:     quote.Status,
+		CreatedAt:  timeKey(quote.CreatedAt),
+		Quote:      quote,
+	}
+	if quote.ShareToken != "" {
+		item.GSI1PK = quoteTokenPK(quote.ShareToken)
+		item.GSI1SK = quoteSK(quote.ID)
+	}
+	return r.putItem(context.Background(), item)
+}
+
+func (r *DynamoRepository) GetQuoteByID(id, companyID string) (*domain.Quote, error) {
+	item, err := r.getItem(context.Background(), companyPK(companyID), quoteSK(id))
+	if err != nil {
+		return nil, err
+	}
+	if item.Quote == nil {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return item.Quote, nil
+}
+
+func (r *DynamoRepository) GetAllQuotes(companyID string) ([]domain.Quote, error) {
+	items, err := r.query(context.Background(),
+		expression.Key("PK").Equal(expression.Value(companyPK(companyID))).And(expression.Key("SK").BeginsWith(quoteSK(""))),
+	)
+	if err != nil {
+		return nil, err
+	}
+	quotes := make([]domain.Quote, 0, len(items))
+	for _, item := range items {
+		if item.Quote != nil {
+			quotes = append(quotes, *item.Quote)
+		}
+	}
+	sort.Slice(quotes, func(i, j int) bool {
+		return quotes[i].CreatedAt.After(quotes[j].CreatedAt)
+	})
+	return quotes, nil
+}
+
+func (r *DynamoRepository) UpdateQuote(quote *domain.Quote) error {
+	quote.UpdatedAt = time.Now()
+	return r.CreateQuote(quote)
+}
+
+func (r *DynamoRepository) GetQuoteByToken(token string) (*domain.Quote, error) {
+	items, err := r.query(context.Background(),
+		expression.Key("GSI1PK").Equal(expression.Value(quoteTokenPK(token))),
+		withIndex("GSI1"),
+		withLimit(1),
+	)
+	if err != nil {
+		return nil, err
+	}
+	if len(items) == 0 || items[0].Quote == nil {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return items[0].Quote, nil
 }
 
 func (r *DynamoRepository) commentsByClient(clientID string) ([]domain.Comment, error) {
@@ -1216,14 +1290,18 @@ func usernamePK(value string) string { return "USERNAME#" + strings.ToLower(valu
 func emailPK(value string) string    { return "EMAIL#" + strings.ToLower(value) }
 func clientPK(id string) string      { return "CLIENT#" + id }
 func clientSK(id string) string      { return "CLIENT#" + id }
-func projectPK(id string) string     { return "PROJECT#" + id }
-func projectSK(id string) string     { return "PROJECT#" + id }
-func taskPK(id string) string        { return "TASK#" + id }
-func taskSK(id string) string        { return "TASK#" + id }
-func subtaskPK(id string) string     { return "SUBTASK#" + id }
-func subtaskSK(id string) string     { return "SUBTASK#" + id }
-func linkPK(id string) string        { return "LINK#" + id }
-func linkSK(id string) string        { return "LINK#" + id }
+func quoteSK(id string) string       { return "QUOTE#" + id }
+func quoteTokenPK(token string) string {
+	return "QUOTE_TOKEN#" + token
+}
+func projectPK(id string) string { return "PROJECT#" + id }
+func projectSK(id string) string { return "PROJECT#" + id }
+func taskPK(id string) string    { return "TASK#" + id }
+func taskSK(id string) string    { return "TASK#" + id }
+func subtaskPK(id string) string { return "SUBTASK#" + id }
+func subtaskSK(id string) string { return "SUBTASK#" + id }
+func linkPK(id string) string    { return "LINK#" + id }
+func linkSK(id string) string    { return "LINK#" + id }
 func companySlugPK(slug string) string {
 	return "COMPANY_SLUG#" + strings.ToLower(slug)
 }

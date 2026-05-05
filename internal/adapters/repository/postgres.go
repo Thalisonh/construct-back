@@ -412,6 +412,43 @@ func (r *PostgresRepository) DeleteClientDocument(id, clientID, companyID string
 	return r.db.Delete(&domain.ClientDocument{}, "id = ? AND client_id = ? AND company_id = ?", id, clientID, companyID).Error
 }
 
+// QuoteRepository Implementation
+
+func (r *PostgresRepository) CreateQuote(quote *domain.Quote) error {
+	return r.db.Create(quote).Error
+}
+
+func (r *PostgresRepository) GetQuoteByID(id, companyID string) (*domain.Quote, error) {
+	var quote domain.Quote
+	if err := r.db.Preload("Items").Where("id = ? AND company_id = ?", id, companyID).First(&quote).Error; err != nil {
+		return nil, err
+	}
+	return &quote, nil
+}
+
+func (r *PostgresRepository) GetAllQuotes(companyID string) ([]domain.Quote, error) {
+	var quotes []domain.Quote
+	err := r.db.Preload("Items").Where("company_id = ?", companyID).Order("created_at DESC").Find(&quotes).Error
+	return quotes, err
+}
+
+func (r *PostgresRepository) UpdateQuote(quote *domain.Quote) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("quote_id = ?", quote.ID).Delete(&domain.QuoteItem{}).Error; err != nil {
+			return err
+		}
+		return tx.Where("id = ? AND company_id = ?", quote.ID, quote.CompanyID).Save(quote).Error
+	})
+}
+
+func (r *PostgresRepository) GetQuoteByToken(token string) (*domain.Quote, error) {
+	var quote domain.Quote
+	if err := r.db.Preload("Items").Where("share_token = ?", token).First(&quote).Error; err != nil {
+		return nil, err
+	}
+	return &quote, nil
+}
+
 func (r *PostgresRepository) UpdateSubtaskByTaskID(taskID string) error {
 	return r.db.Model(&domain.Subtask{}).Where("task_id = ?", taskID).Update("status", "Completed").Error
 }

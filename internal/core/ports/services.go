@@ -75,6 +75,18 @@ type ClientService interface {
 	DeleteClientDocument(clientID, documentID, companyID string) error
 }
 
+type QuoteService interface {
+	CreateQuote(companyID, userID, clientID, title string, clientSnapshot domain.ClientSnapshot, paymentTerms domain.PaymentTerms, items []domain.QuoteItem) (*domain.Quote, error)
+	ListQuotes(companyID string) ([]domain.Quote, error)
+	GetQuote(id, companyID string) (*domain.Quote, error)
+	UpdateQuote(id, companyID, clientID, title string, clientSnapshot domain.ClientSnapshot, paymentTerms domain.PaymentTerms, items []domain.QuoteItem) (*domain.Quote, error)
+	PublishQuote(id, companyID string) (*domain.Quote, string, error)
+	ArchiveQuote(id, companyID string) (*domain.Quote, error)
+	GetPublicQuote(token string) (*domain.Quote, error)
+	VerifyPublicQuotePassword(token, password string) (*domain.Quote, error)
+	GenerateQuotePDF(id, companyID string) ([]byte, string, error)
+}
+
 type CompanyService interface {
 	CreateCompany(name, cnpj, email, phone, address string) (*domain.Company, error)
 	GetCompany(id string) (*domain.Company, error)

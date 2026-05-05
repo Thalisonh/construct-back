@@ -72,6 +72,14 @@ type ClientRepository interface {
 	DeleteClientDocument(id, clientID, companyID string) error
 }
 
+type QuoteRepository interface {
+	CreateQuote(quote *domain.Quote) error
+	GetQuoteByID(id, companyID string) (*domain.Quote, error)
+	GetAllQuotes(companyID string) ([]domain.Quote, error)
+	UpdateQuote(quote *domain.Quote) error
+	GetQuoteByToken(token string) (*domain.Quote, error)
+}
+
 type CompanyRepository interface {
 	CreateCompany(company *domain.Company) error
 	GetCompanyByID(id string) (*domain.Company, error)

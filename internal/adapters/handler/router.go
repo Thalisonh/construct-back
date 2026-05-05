@@ -17,6 +17,7 @@ func SetupRouter(
 	projectHandler *ProjectHandler,
 	linkHandler *LinkHandler,
 	clientHandler *ClientHandler,
+	quoteHandler *QuoteHandler,
 	companyHandler *CompanyHandler,
 	subscriptionHandler *SubscriptionHandler,
 	jwtSecret string,
@@ -37,6 +38,8 @@ func SetupRouter(
 	r.POST("/public/projects/:id/verify-pin", projectHandler.VerifyPublicProjectPin)
 	r.GET("/public/projects/:id", projectHandler.GetPublicProject)
 	r.GET("/public/projects/:id/diary", projectHandler.ListPublicDiaryEntries)
+	r.GET("/public/quotes/:token", quoteHandler.GetPublicQuote)
+	r.POST("/public/quotes/:token/verify-password", quoteHandler.VerifyPublicQuotePassword)
 	r.POST("/click/link/:id", linkHandler.TrackClick)
 	// Webhook do gateway de pagamento — sem autenticação JWT (validado por assinatura)
 	r.POST("/webhooks/payment", subscriptionHandler.HandleWebhook)
@@ -98,6 +101,15 @@ func SetupRouter(
 		api.POST("/clients/:id/documents", clientHandler.UploadDocument)
 		api.GET("/clients/:id/documents", clientHandler.ListDocuments)
 		api.DELETE("/clients/:id/documents/:documentId", clientHandler.DeleteDocument)
+
+		api.POST("/quotes", quoteHandler.CreateQuote)
+		api.GET("/quotes", quoteHandler.ListQuotes)
+		api.GET("/quotes/:id", quoteHandler.GetQuote)
+		api.PUT("/quotes/:id", quoteHandler.UpdateQuote)
+		api.POST("/quotes/:id/publish", quoteHandler.PublishQuote)
+		api.POST("/quotes/:id/archive", quoteHandler.ArchiveQuote)
+		api.POST("/quotes/:id/pdf", quoteHandler.DownloadQuotePDF)
+		api.GET("/quotes/:id/pdf", quoteHandler.DownloadQuotePDF)
 
 		api.GET("/company", companyHandler.GetCompany)
 		api.PUT("/company", companyHandler.UpdateCompany)
