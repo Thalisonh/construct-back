@@ -3,3 +3,4 @@
 .exe
 server.exe
 *.local.yaml
+bootstrap
