@@ -39,6 +39,7 @@ func (s *ProjectService) CreateProject(companyID, userID, name, clientID, addres
 		StartDate: parsedStartDate,
 		UserID:    userID,
 		CompanyID: companyID,
+		Status:    domain.ProjectStatusInProgress,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
@@ -102,6 +103,22 @@ func (s *ProjectService) UpdateProject(id, name, clientID, address, summary, sta
 	project.StartDate = parsedStartDate
 	project.UpdatedAt = time.Now()
 	project.IsPublic = isPublic
+
+	if err := s.projectRepo.UpdateProject(project); err != nil {
+		return nil, err
+	}
+
+	return project, nil
+}
+
+func (s *ProjectService) CompleteProject(id, companyID string) (*domain.Project, error) {
+	project, err := s.projectRepo.GetProjectByID(id, companyID)
+	if err != nil {
+		return nil, err
+	}
+
+	project.Status = domain.ProjectStatusCompleted
+	project.UpdatedAt = time.Now()
 
 	if err := s.projectRepo.UpdateProject(project); err != nil {
 		return nil, err
@@ -439,6 +456,132 @@ func (s *ProjectService) DeleteDiaryDocument(projectID, entryID, documentID, com
 		return err
 	}
 	return s.documents.storage.Delete(context.Background(), document.StorageKey)
+}
+
+func (s *ProjectService) CreatePublicWarrantyClaim(projectID, pin, title, description, location, clientName, clientPhone string) (*domain.WarrantyClaim, error) {
+	project, err := s.projectRepo.GetPublicProjectByID(projectID)
+	if err != nil {
+		return nil, fmt.Errorf("project not found or not public")
+	}
+	if err := validatePublicProjectPin(project, pin); err != nil {
+		return nil, err
+	}
+	if !isProjectCompleted(project) {
+		return nil, fmt.Errorf("post-work warranty is available only for completed projects")
+	}
+
+	title = strings.TrimSpace(title)
+	description = strings.TrimSpace(description)
+	clientName = strings.TrimSpace(clientName)
+	clientPhone = strings.TrimSpace(clientPhone)
+	if title == "" || description == "" || clientName == "" {
+		return nil, fmt.Errorf("title, description and client_name are required")
+	}
+
+	now := time.Now()
+	claim := &domain.WarrantyClaim{
+		ID:          uuid.NewString(),
+		ProjectID:   projectID,
+		CompanyID:   project.CompanyID,
+		Title:       title,
+		Description: description,
+		Location:    strings.TrimSpace(location),
+		Status:      domain.WarrantyStatusNew,
+		ClientName:  clientName,
+		ClientPhone: clientPhone,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+	if err := s.projectRepo.CreateWarrantyClaim(claim); err != nil {
+		return nil, err
+	}
+	return claim, nil
+}
+
+func (s *ProjectService) ListPublicWarrantyClaims(projectID, pin string) ([]domain.WarrantyClaim, error) {
+	project, err := s.projectRepo.GetPublicProjectByID(projectID)
+	if err != nil {
+		return nil, fmt.Errorf("project not found or not public")
+	}
+	if err := validatePublicProjectPin(project, pin); err != nil {
+		return nil, err
+	}
+	if !isProjectCompleted(project) {
+		return []domain.WarrantyClaim{}, nil
+	}
+	return s.projectRepo.GetPublicWarrantyClaimsByProject(projectID)
+}
+
+func (s *ProjectService) ListWarrantyClaims(projectID, companyID string) ([]domain.WarrantyClaim, error) {
+	project, err := s.projectRepo.GetProjectByID(projectID, companyID)
+	if err != nil {
+		return nil, fmt.Errorf("project not found or access denied")
+	}
+	if !isProjectCompleted(project) {
+		return []domain.WarrantyClaim{}, nil
+	}
+	return s.projectRepo.GetWarrantyClaimsByProject(projectID, companyID)
+}
+
+func (s *ProjectService) UpdateWarrantyClaim(projectID, claimID, companyID, status, resolutionNote string) (*domain.WarrantyClaim, error) {
+	project, err := s.projectRepo.GetProjectByID(projectID, companyID)
+	if err != nil {
+		return nil, fmt.Errorf("project not found or access denied")
+	}
+	if !isProjectCompleted(project) {
+		return nil, fmt.Errorf("post-work warranty is available only for completed projects")
+	}
+
+	claim, err := s.projectRepo.GetWarrantyClaimByID(claimID, projectID, companyID)
+	if err != nil {
+		return nil, fmt.Errorf("warranty claim not found")
+	}
+
+	status = strings.TrimSpace(status)
+	if status == "" {
+		status = claim.Status
+	}
+	if !isValidWarrantyStatus(status) {
+		return nil, fmt.Errorf("invalid warranty status")
+	}
+
+	resolutionNote = strings.TrimSpace(resolutionNote)
+	if status == domain.WarrantyStatusNotWarranty && resolutionNote == "" {
+		return nil, fmt.Errorf("resolution_note is required for not_warranty status")
+	}
+
+	claim.Status = status
+	claim.ResolutionNote = resolutionNote
+	claim.UpdatedAt = time.Now()
+	if status == domain.WarrantyStatusResolved {
+		now := time.Now()
+		claim.ResolvedAt = &now
+	} else if status != domain.WarrantyStatusResolved {
+		claim.ResolvedAt = nil
+	}
+
+	if err := s.projectRepo.UpdateWarrantyClaim(claim); err != nil {
+		return nil, err
+	}
+	return claim, nil
+}
+
+func isValidWarrantyStatus(status string) bool {
+	switch status {
+	case domain.WarrantyStatusNew,
+		domain.WarrantyStatusUnderReview,
+		domain.WarrantyStatusAccepted,
+		domain.WarrantyStatusNotWarranty,
+		domain.WarrantyStatusScheduled,
+		domain.WarrantyStatusResolved:
+		return true
+	default:
+		return false
+	}
+}
+
+func isProjectCompleted(project *domain.Project) bool {
+	return project != nil && project.Status == domain.ProjectStatusCompleted
 }
 
 func validatePublicProjectPin(project *domain.Project, pin string) error {

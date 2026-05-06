@@ -48,6 +48,11 @@ type ProjectRepository interface {
 	GetDiaryDocuments(entryID, projectID, companyID string) ([]domain.DiaryDocument, error)
 	GetDiaryDocumentByID(id, entryID, projectID, companyID string) (*domain.DiaryDocument, error)
 	DeleteDiaryDocument(id, entryID, projectID, companyID string) error
+	CreateWarrantyClaim(claim *domain.WarrantyClaim) error
+	GetWarrantyClaimsByProject(projectID, companyID string) ([]domain.WarrantyClaim, error)
+	GetPublicWarrantyClaimsByProject(projectID string) ([]domain.WarrantyClaim, error)
+	GetWarrantyClaimByID(id, projectID, companyID string) (*domain.WarrantyClaim, error)
+	UpdateWarrantyClaim(claim *domain.WarrantyClaim) error
 }
 
 type LinkRepository interface {

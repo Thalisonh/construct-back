@@ -132,7 +132,7 @@ func newPostgresRepository() (*repository.PostgresRepository, error) {
 	}
 
 	if os.Getenv("AUTO_MIGRATE") == "true" {
-		if err := db.AutoMigrate(&domain.User{}, &domain.Project{}, &domain.Link{}, &domain.Client{}, &domain.Comment{}, &domain.Task{}, &domain.Subtask{}, &domain.LinkClick{}, &domain.Company{}, &domain.DiaryEntry{}, &domain.DiaryItem{}, &domain.ClientDocument{}, &domain.DiaryDocument{}, &domain.Quote{}, &domain.QuoteItem{}); err != nil {
+		if err := db.AutoMigrate(&domain.User{}, &domain.Project{}, &domain.Link{}, &domain.Client{}, &domain.Comment{}, &domain.Task{}, &domain.Subtask{}, &domain.LinkClick{}, &domain.Company{}, &domain.DiaryEntry{}, &domain.DiaryItem{}, &domain.WarrantyClaim{}, &domain.ClientDocument{}, &domain.DiaryDocument{}, &domain.Quote{}, &domain.QuoteItem{}); err != nil {
 			return nil, fmt.Errorf("auto migrate Postgres: %w", err)
 		}
 		log.Println("Postgres auto migration completed")

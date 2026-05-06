@@ -4,6 +4,11 @@ import (
 	"time"
 )
 
+const (
+	ProjectStatusInProgress = "In Progress"
+	ProjectStatusCompleted  = "Completed"
+)
+
 type Project struct {
 	ID        string    `bson:"_id" json:"id" datastore:"-" gorm:"primaryKey"`
 	Name      string    `bson:"name" json:"name" datastore:"name"`
@@ -43,6 +48,31 @@ type DiaryItem struct {
 	SortOrder    int       `json:"sort_order"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+const (
+	WarrantyStatusNew         = "new"
+	WarrantyStatusUnderReview = "under_review"
+	WarrantyStatusAccepted    = "accepted"
+	WarrantyStatusNotWarranty = "not_warranty"
+	WarrantyStatusScheduled   = "scheduled"
+	WarrantyStatusResolved    = "resolved"
+)
+
+type WarrantyClaim struct {
+	ID             string     `json:"id" gorm:"primaryKey"`
+	ProjectID      string     `json:"project_id" gorm:"index"`
+	CompanyID      string     `json:"company_id" gorm:"index"`
+	Title          string     `json:"title"`
+	Description    string     `json:"description"`
+	Location       string     `json:"location"`
+	Status         string     `json:"status" gorm:"index"`
+	ClientName     string     `json:"client_name"`
+	ClientPhone    string     `json:"client_phone"`
+	ResolutionNote string     `json:"resolution_note"`
+	CreatedAt      time.Time  `json:"created_at"`
+	UpdatedAt      time.Time  `json:"updated_at"`
+	ResolvedAt     *time.Time `json:"resolved_at"`
 }
 
 type Task struct {

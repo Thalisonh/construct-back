@@ -29,6 +29,7 @@ const (
 	entitySubtask        = "subtask"
 	entityDiaryEntry     = "diary_entry"
 	entityDiaryDocument  = "diary_document"
+	entityWarrantyClaim  = "warranty_claim"
 	entityLink           = "link"
 	entityLinkClick      = "link_click"
 	entityClientDocument = "client_document"
@@ -71,6 +72,7 @@ type dynamoItem struct {
 	Subtask        *domain.Subtask        `dynamodbav:"subtask,omitempty"`
 	DiaryEntry     *domain.DiaryEntry     `dynamodbav:"diary_entry,omitempty"`
 	DiaryDocument  *domain.DiaryDocument  `dynamodbav:"diary_document,omitempty"`
+	WarrantyClaim  *domain.WarrantyClaim  `dynamodbav:"warranty_claim,omitempty"`
 	ClientDocument *domain.ClientDocument `dynamodbav:"client_document,omitempty"`
 	Link           *domain.Link           `dynamodbav:"link,omitempty"`
 	LinkClick      *domain.LinkClick      `dynamodbav:"link_click,omitempty"`
@@ -935,6 +937,65 @@ func (r *DynamoRepository) DeleteDiaryEntry(id, projectID, companyID string) err
 	return r.deleteItem(context.Background(), projectPK(projectID), diarySK(entry.EntryDate, entry.ID))
 }
 
+func (r *DynamoRepository) CreateWarrantyClaim(claim *domain.WarrantyClaim) error {
+	item := warrantyClaimItem(claim)
+	return r.putItem(context.Background(), item)
+}
+
+func (r *DynamoRepository) GetWarrantyClaimsByProject(projectID, companyID string) ([]domain.WarrantyClaim, error) {
+	items, err := r.query(context.Background(),
+		expression.Key("PK").Equal(expression.Value(projectPK(projectID))).And(expression.Key("SK").BeginsWith(warrantyClaimSK(""))),
+	)
+	if err != nil {
+		return nil, err
+	}
+	claims := make([]domain.WarrantyClaim, 0, len(items))
+	for _, item := range items {
+		if item.WarrantyClaim != nil && item.WarrantyClaim.CompanyID == companyID {
+			claims = append(claims, *item.WarrantyClaim)
+		}
+	}
+	sort.Slice(claims, func(i, j int) bool {
+		return claims[i].CreatedAt.After(claims[j].CreatedAt)
+	})
+	return claims, nil
+}
+
+func (r *DynamoRepository) GetPublicWarrantyClaimsByProject(projectID string) ([]domain.WarrantyClaim, error) {
+	items, err := r.query(context.Background(),
+		expression.Key("PK").Equal(expression.Value(projectPK(projectID))).And(expression.Key("SK").BeginsWith(warrantyClaimSK(""))),
+	)
+	if err != nil {
+		return nil, err
+	}
+	claims := make([]domain.WarrantyClaim, 0, len(items))
+	for _, item := range items {
+		if item.WarrantyClaim != nil {
+			claims = append(claims, *item.WarrantyClaim)
+		}
+	}
+	sort.Slice(claims, func(i, j int) bool {
+		return claims[i].CreatedAt.After(claims[j].CreatedAt)
+	})
+	return claims, nil
+}
+
+func (r *DynamoRepository) GetWarrantyClaimByID(id, projectID, companyID string) (*domain.WarrantyClaim, error) {
+	item, err := r.getItem(context.Background(), projectPK(projectID), warrantyClaimSK(id))
+	if err != nil {
+		return nil, err
+	}
+	if item.WarrantyClaim == nil || item.WarrantyClaim.CompanyID != companyID {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return item.WarrantyClaim, nil
+}
+
+func (r *DynamoRepository) UpdateWarrantyClaim(claim *domain.WarrantyClaim) error {
+	claim.UpdatedAt = time.Now()
+	return r.CreateWarrantyClaim(claim)
+}
+
 func (r *DynamoRepository) CreateDiaryDocument(document *domain.DiaryDocument) error {
 	item := dynamoItem{
 		PK:            projectPK(document.ProjectID),
@@ -1264,6 +1325,20 @@ func diaryEntryItem(entry *domain.DiaryEntry) dynamoItem {
 	}
 }
 
+func warrantyClaimItem(claim *domain.WarrantyClaim) dynamoItem {
+	return dynamoItem{
+		PK:            projectPK(claim.ProjectID),
+		SK:            warrantyClaimSK(claim.ID),
+		EntityType:    entityWarrantyClaim,
+		ID:            claim.ID,
+		CompanyID:     claim.CompanyID,
+		ProjectID:     claim.ProjectID,
+		Status:        claim.Status,
+		CreatedAt:     timeKey(claim.CreatedAt),
+		WarrantyClaim: claim,
+	}
+}
+
 func key(pk, sk string) map[string]types.AttributeValue {
 	return map[string]types.AttributeValue{
 		"PK": &types.AttributeValueMemberS{Value: pk},
@@ -1327,6 +1402,10 @@ func diarySKPrefix() string {
 
 func diarySK(entryDate time.Time, id string) string {
 	return diarySKPrefix() + dayKey(entryDate) + "#" + id
+}
+
+func warrantyClaimSK(id string) string {
+	return "WARRANTY_CLAIM#" + id
 }
 
 func clientDocumentPrefix() string {

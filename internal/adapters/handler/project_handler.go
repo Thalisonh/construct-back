@@ -158,6 +158,22 @@ func (h *ProjectHandler) UpdateProject(c *gin.Context) {
 	c.JSON(http.StatusOK, project)
 }
 
+func (h *ProjectHandler) CompleteProject(c *gin.Context) {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	project, err := h.projectService.CompleteProject(c.Param("id"), companyID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, project)
+}
+
 func (h *ProjectHandler) DeleteProject(c *gin.Context) {
 	companyID := c.GetString("company_id")
 	if companyID == "" {
@@ -264,6 +280,19 @@ type diaryEntryRequest struct {
 	Items     []diaryItemRequest `json:"items" binding:"required,min=1"`
 }
 
+type warrantyClaimRequest struct {
+	Title       string `json:"title" binding:"required"`
+	Description string `json:"description" binding:"required"`
+	Location    string `json:"location"`
+	ClientName  string `json:"client_name" binding:"required"`
+	ClientPhone string `json:"client_phone"`
+}
+
+type updateWarrantyClaimRequest struct {
+	Status         string `json:"status" binding:"required"`
+	ResolutionNote string `json:"resolution_note"`
+}
+
 func validateDiaryItems(items []diaryItemRequest) error {
 	for _, item := range items {
 		if item.Type != "text" && item.Type != "field" {
@@ -366,6 +395,70 @@ func (h *ProjectHandler) ListPublicDiaryEntries(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, entries)
+}
+
+func (h *ProjectHandler) CreatePublicWarrantyClaim(c *gin.Context) {
+	projectID := c.Param("id")
+	pin := c.GetHeader(publicProjectPinHeader)
+	var req warrantyClaimRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	claim, err := h.projectService.CreatePublicWarrantyClaim(projectID, pin, req.Title, req.Description, req.Location, req.ClientName, req.ClientPhone)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, claim)
+}
+
+func (h *ProjectHandler) ListPublicWarrantyClaims(c *gin.Context) {
+	projectID := c.Param("id")
+	pin := c.GetHeader(publicProjectPinHeader)
+	claims, err := h.projectService.ListPublicWarrantyClaims(projectID, pin)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "warranty claims not found"})
+		return
+	}
+	c.JSON(http.StatusOK, claims)
+}
+
+func (h *ProjectHandler) ListWarrantyClaims(c *gin.Context) {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	claims, err := h.projectService.ListWarrantyClaims(c.Param("id"), companyID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, claims)
+}
+
+func (h *ProjectHandler) UpdateWarrantyClaim(c *gin.Context) {
+	companyID := c.GetString("company_id")
+	if companyID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var req updateWarrantyClaimRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	claim, err := h.projectService.UpdateWarrantyClaim(c.Param("id"), c.Param("claimId"), companyID, req.Status, req.ResolutionNote)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, claim)
 }
 
 func (h *ProjectHandler) UpdateDiaryEntry(c *gin.Context) {

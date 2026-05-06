@@ -21,6 +21,7 @@ type ProjectService interface {
 	GetPublicProject(id, pin string) (*domain.Project, error)
 	VerifyPublicProjectPin(id, pin string) error
 	UpdateProject(id, name, clientID, address, summary, startDate string, isPublic bool, companyID string) (*domain.Project, error)
+	CompleteProject(id, companyID string) (*domain.Project, error)
 	DeleteProject(id, companyID string) error
 	AddTask(projectID, name, status, dueDate, companyID, userID string) (*domain.Task, error)
 	AddSubtask(taskID, name, status, companyID, userID string) (*domain.Subtask, error)
@@ -39,6 +40,10 @@ type ProjectService interface {
 	UploadDiaryDocument(projectID, entryID, companyID, userID, fileName, contentType string, fileSize int64, body io.Reader) (*domain.DiaryDocument, error)
 	ListDiaryDocuments(projectID, entryID, companyID string) ([]domain.DiaryDocument, error)
 	DeleteDiaryDocument(projectID, entryID, documentID, companyID string) error
+	CreatePublicWarrantyClaim(projectID, pin, title, description, location, clientName, clientPhone string) (*domain.WarrantyClaim, error)
+	ListPublicWarrantyClaims(projectID, pin string) ([]domain.WarrantyClaim, error)
+	ListWarrantyClaims(projectID, companyID string) ([]domain.WarrantyClaim, error)
+	UpdateWarrantyClaim(projectID, claimID, companyID, status, resolutionNote string) (*domain.WarrantyClaim, error)
 }
 
 type LinkService interface {

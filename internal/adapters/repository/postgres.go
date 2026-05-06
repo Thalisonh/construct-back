@@ -289,6 +289,38 @@ func (r *PostgresRepository) DeleteDiaryEntry(id, projectID, companyID string) e
 	})
 }
 
+func (r *PostgresRepository) CreateWarrantyClaim(claim *domain.WarrantyClaim) error {
+	return r.db.Create(claim).Error
+}
+
+func (r *PostgresRepository) GetWarrantyClaimsByProject(projectID, companyID string) ([]domain.WarrantyClaim, error) {
+	var claims []domain.WarrantyClaim
+	err := r.db.Where("project_id = ? AND company_id = ?", projectID, companyID).
+		Order("created_at DESC").
+		Find(&claims).Error
+	return claims, err
+}
+
+func (r *PostgresRepository) GetPublicWarrantyClaimsByProject(projectID string) ([]domain.WarrantyClaim, error) {
+	var claims []domain.WarrantyClaim
+	err := r.db.Where("project_id = ?", projectID).
+		Order("created_at DESC").
+		Find(&claims).Error
+	return claims, err
+}
+
+func (r *PostgresRepository) GetWarrantyClaimByID(id, projectID, companyID string) (*domain.WarrantyClaim, error) {
+	var claim domain.WarrantyClaim
+	if err := r.db.Where("id = ? AND project_id = ? AND company_id = ?", id, projectID, companyID).First(&claim).Error; err != nil {
+		return nil, err
+	}
+	return &claim, nil
+}
+
+func (r *PostgresRepository) UpdateWarrantyClaim(claim *domain.WarrantyClaim) error {
+	return r.db.Where("id = ? AND project_id = ? AND company_id = ?", claim.ID, claim.ProjectID, claim.CompanyID).Save(claim).Error
+}
+
 // LinkRepository Implementation
 
 func (r *PostgresRepository) CreateLink(link *domain.Link) error {
